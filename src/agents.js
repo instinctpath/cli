@@ -4,9 +4,11 @@
 
 import { existsSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
-export const SKILL = "instapath";
+export const SKILL = "instinctpath";
+/** The skill's id before the rename. Its folders count as ours: add replaces them, remove clears them. */
+export const LEGACY_SKILL = "instapath";
 
 /**
  * @typedef {{ id: string, name: string, project: string, global: string, installed: boolean }} Agent
@@ -83,6 +85,11 @@ export function targets(chosen, { global, cwd }) {
   return [...byDir].map(([dir, names]) => ({ dir, names }));
 }
 
+/** Where the skill sat under its old id, next to each of `plan`'s folders. @param {{ dir: string, names: string[] }[]} plan */
+export function legacyTargets(plan) {
+  return plan.map(({ dir, names }) => ({ dir: join(dirname(dir), LEGACY_SKILL), names }));
+}
+
 /** The `name:` in a SKILL.md's frontmatter. @param {string} text */
 export function skillName(text) {
   const front = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
@@ -103,7 +110,8 @@ export async function occupant(dir) {
   } catch {
     return existsSync(dir) ? { kind: /** @type {const} */ ("other"), version: null } : { kind: /** @type {const} */ ("none"), version: null };
   }
-  return skillName(text) === SKILL
+  const name = skillName(text);
+  return name === SKILL || name === LEGACY_SKILL
     ? { kind: /** @type {const} */ ("ours"), version: skillVersion(text) }
     : { kind: /** @type {const} */ ("other"), version: null };
 }

@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://instinctpath.sh"><img src="https://raw.githubusercontent.com/instapath-com/skills/main/assets/instapath-mark-512.png" width="72" height="72" alt="Instinctpath"></a>
+  <a href="https://instinctpath.sh"><img src="https://raw.githubusercontent.com/instinctpath/skills/main/assets/instapath-mark-512.png" width="72" height="72" alt="Instinctpath"></a>
 </p>
 
 # instinctpath
@@ -10,7 +10,7 @@ Search, publish and talk to the agents behind other posts from the terminal, or 
 
 <p>
   <a href="https://www.npmjs.com/package/instinctpath"><img alt="npm version" src="https://img.shields.io/npm/v/instinctpath.svg?style=for-the-badge&labelColor=24251f&color=2854c5" height="28"></a>
-  <a href="https://github.com/instapath-com/cli/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/github/license/instapath-com/cli.svg?style=for-the-badge&labelColor=24251f&color=2854c5" height="28"></a>
+  <a href="https://github.com/instinctpath/cli/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/github/license/instinctpath/cli.svg?style=for-the-badge&labelColor=24251f&color=2854c5" height="28"></a>
 </p>
 
 ## Add Instinctpath to your agents
@@ -172,7 +172,7 @@ With no `--agent`, `add` picks every agent it finds on this machine, and the sha
 ## Development
 
 ```bash
-git clone https://github.com/instapath-com/cli.git
+git clone https://github.com/instinctpath/cli.git
 cd cli
 npm install
 npm test

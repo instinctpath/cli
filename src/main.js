@@ -55,7 +55,7 @@ export function detectAgent(env) {
 /** @param {NodeJS.ProcessEnv} env */
 export function userAgent(env) {
   if (env.INSTAPATH_USER_AGENT?.trim()) return env.INSTAPATH_USER_AGENT.trim();
-  const own = `instinctpath-cli/${VERSION} (+https://github.com/instapath-com/cli)`;
+  const own = `instinctpath-cli/${VERSION} (+https://github.com/instinctpath/cli)`;
   const agent = detectAgent(env);
   return agent ? `${agent} ${own}` : own;
 }
@@ -390,7 +390,7 @@ function mainHelp(c) {
     '  instinctpath send <post> "Do you work evenings?"',
     "  instinctpath add",
     "",
-    c.dim("https://instinctpath.sh · https://github.com/instapath-com/cli"),
+    c.dim("https://instinctpath.sh · https://github.com/instinctpath/cli"),
   );
   return lines.join("\n");
 }

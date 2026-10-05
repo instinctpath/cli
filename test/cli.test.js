@@ -203,29 +203,50 @@ test("connect does not make a second account when one is saved", async () => {
 });
 
 test("add puts the skill where each agent found reads skills, and remove takes it away", async () => {
-  const skill = '---\nname: instapath\nmetadata:\n  version: "1.12.0"\n---\n# Instinctpath\n';
+  const skill = '---\nname: instinctpath\nmetadata:\n  version: "1.15.0"\n---\n# Instinctpath\n';
   const site = fakeApi({ "GET /skill.md": () => [200, skill], "GET /heartbeat.md": () => [200, "# Heartbeat\n"] });
   const { home } = await run(["--version"]);
   await mkdir(join(home, ".claude"));
-  await mkdir(join(home, ".cursor/skills/instapath"), { recursive: true });
+  await mkdir(join(home, ".cursor/skills/instinctpath"), { recursive: true });
   await mkdir(join(home, ".codex"));
-  await writeFile(join(home, ".cursor/skills/instapath/SKILL.md"), "---\nname: someone-else\n---\n");
+  await writeFile(join(home, ".cursor/skills/instinctpath/SKILL.md"), "---\nname: someone-else\n---\n");
 
   const added = await run(["add"], { fetch: site.fetch, home });
   assert.equal(added.code, 0, added.err);
-  assert.equal(await readFile(join(home, ".claude/skills/instapath/SKILL.md"), "utf8"), skill);
-  assert.equal(await readFile(join(home, ".codex/skills/instapath/HEARTBEAT.md"), "utf8"), "# Heartbeat\n");
-  assert.match(await readFile(join(home, ".cursor/skills/instapath/SKILL.md"), "utf8"), /someone-else/);
-  assert.match(added.err, /Skipped ~\/\.cursor\/skills\/instapath/);
+  assert.equal(await readFile(join(home, ".claude/skills/instinctpath/SKILL.md"), "utf8"), skill);
+  assert.equal(await readFile(join(home, ".codex/skills/instinctpath/HEARTBEAT.md"), "utf8"), "# Heartbeat\n");
+  assert.match(await readFile(join(home, ".cursor/skills/instinctpath/SKILL.md"), "utf8"), /someone-else/);
+  assert.match(added.err, /Skipped ~\/\.cursor\/skills\/instinctpath/);
 
   const listed = await run(["add", "--list", "--json"], { home });
   const claude = JSON.parse(listed.out).agents.find((/** @type {any} */ a) => a.id === "claude-code");
-  assert.equal(claude.skill, "1.12.0");
+  assert.equal(claude.skill, "1.15.0");
 
   const removed = await run(["remove", "-y"], { home });
   assert.equal(removed.code, 0, removed.err);
-  await assert.rejects(stat(join(home, ".claude/skills/instapath")));
-  assert.match(await readFile(join(home, ".cursor/skills/instapath/SKILL.md"), "utf8"), /someone-else/);
+  await assert.rejects(stat(join(home, ".claude/skills/instinctpath")));
+  assert.match(await readFile(join(home, ".cursor/skills/instinctpath/SKILL.md"), "utf8"), /someone-else/);
+});
+
+test("a copy saved under the old id, instapath, is replaced by add and cleared by remove", async () => {
+  const skill = '---\nname: instinctpath\nmetadata:\n  version: "1.15.0"\n---\n# Instinctpath\n';
+  const site = fakeApi({ "GET /skill.md": () => [200, skill], "GET /heartbeat.md": () => [200, "# Heartbeat\n"] });
+  const { home } = await run(["--version"]);
+  const old = join(home, ".claude/skills/instapath");
+  await mkdir(old, { recursive: true });
+  await writeFile(join(old, "SKILL.md"), '---\nname: instapath\nmetadata:\n  version: "1.14.0"\n---\n');
+
+  const added = await run(["add", "-a", "claude-code"], { fetch: site.fetch, home });
+  assert.equal(added.code, 0, added.err);
+  assert.equal(await readFile(join(home, ".claude/skills/instinctpath/SKILL.md"), "utf8"), skill);
+  await assert.rejects(stat(old));
+
+  await mkdir(old, { recursive: true });
+  await writeFile(join(old, "SKILL.md"), '---\nname: instapath\n---\n');
+  const removed = await run(["remove", "-y", "-a", "claude-code"], { home });
+  assert.equal(removed.code, 0, removed.err);
+  await assert.rejects(stat(old));
+  await assert.rejects(stat(join(home, ".claude/skills/instinctpath")));
 });
 
 test("add refuses a download that is not the Instinctpath skill", async () => {
@@ -233,7 +254,7 @@ test("add refuses a download that is not the Instinctpath skill", async () => {
   const { code, err, home } = await run(["add", "-a", "claude-code"], { fetch: site.fetch });
   assert.equal(code, 1);
   assert.match(err, /not the Instinctpath skill/);
-  await assert.rejects(stat(join(home, ".claude/skills/instapath")));
+  await assert.rejects(stat(join(home, ".claude/skills/instinctpath")));
 });
 
 test("usage mistakes exit with 2 and point at help", async () => {
