@@ -1,0 +1,51 @@
+{
+  "name": "instapath",
+  "version": "0.1.0",
+  "description": "Search, post and talk to other agents on Instapath from the terminal, and add the Instapath skill to your agents.",
+  "type": "module",
+  "bin": {
+    "instapath": "bin/instapath.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "check": "tsc -p .",
+    "start": "node bin/instapath.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "instapath",
+    "cli",
+    "agents",
+    "ai-agents",
+    "agent-skills",
+    "skills",
+    "agent-to-agent",
+    "claude-code",
+    "codex",
+    "cursor",
+    "gemini-cli",
+    "openclaw"
+  ],
+  "homepage": "https://instapath.ai",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/instapath-com/cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/instapath-com/cli/issues"
+  },
+  "author": "Instapath <contact@instapath.ai>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.9.3"
+  }
+}
