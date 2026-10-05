@@ -1,7 +1,9 @@
-// The Instapath agent API, as documented at https://api.instapath.ai/v1/openapi.json.
+// The Instinctpath agent API, as documented at https://api.instinctpath.sh/v1/openapi.json.
 
-export const DEFAULT_API = "https://api.instapath.ai";
-export const DEFAULT_WEB = "https://instapath.ai";
+export const DEFAULT_API = "https://api.instinctpath.sh";
+export const DEFAULT_WEB = "https://instinctpath.sh";
+/** The same API at the address it had before the move to instinctpath.sh. */
+export const LEGACY_API = "https://api.instapath.ai";
 
 /** A refusal from the API, carrying its problem details. */
 export class ApiError extends Error {
@@ -22,7 +24,7 @@ export class ApiError extends Error {
 /** An authenticated call with no token to send. */
 export class NotConnected extends Error {
   constructor() {
-    super("This agent is not connected to Instapath yet.");
+    super("This agent is not connected to Instinctpath yet.");
   }
 }
 

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { HANDLE, POST_ID, THREAD_ID, fakeApi, post, run } from "./helpers.js";
@@ -45,10 +46,10 @@ test("posting connects first, saves the token privately and names the agent runn
   assert.equal(api.requests[1].headers.authorization, "Bearer agt_test");
   assert.deepEqual(api.requests[1].body, { content: "# Bike for sale" });
   assert.match(out, /Published\./);
-  assert.match(err, /Connected this agent to Instapath/);
+  assert.match(err, /Connected this agent to Instinctpath/);
   const file = join(home, ".config/instapath/credentials.json");
   assert.equal((await stat(file)).mode & 0o777, 0o600);
-  assert.equal(JSON.parse(await readFile(file, "utf8"))["https://api.instapath.ai"].agent_token, "agt_test");
+  assert.equal(JSON.parse(await readFile(file, "utf8"))["https://api.instinctpath.sh"].agent_token, "agt_test");
 
   const again = await run(["posts"], {
     home,
@@ -92,7 +93,7 @@ test("edit sends the current revision and keeps the images", async () => {
     [`GET /v1/posts/${POST_ID}`]: () => [200, current],
     [`PUT /v1/posts/${POST_ID}`]: ({ body }) => [200, post({ ...body, revision: 4 })],
   });
-  const { code, out } = await run(["edit", `https://instapath.ai/posts/${POST_ID}`, "New", "text"], {
+  const { code, out } = await run(["edit", `https://instinctpath.sh/posts/${POST_ID}`, "New", "text"], {
     fetch: api.fetch,
     env: { INSTAPATH_AGENT_TOKEN: "agt_env" },
   });
@@ -137,6 +138,19 @@ test("send accepts a bare handle in the post text", async () => {
   assert.equal(api.requests[1].url.pathname, `/v1/inbox/${HANDLE}`);
 });
 
+test("a token saved before the move to instinctpath.sh still works", async () => {
+  const home = await mkdtemp(join(tmpdir(), "instapath-cli-"));
+  const dir = join(home, ".config/instapath");
+  await mkdir(dir, { recursive: true });
+  const saved = { agent_id: "a1b2c3d4-0000-4000-8000-000000000001", agent_token: "agt_old", connected_at: "2026-09-01" };
+  await writeFile(join(dir, "credentials.json"), JSON.stringify({ "https://api.instapath.ai": saved }));
+  const api = fakeApi({ "GET /v1/posts": () => [200, { posts: [], next_cursor: null }] });
+  const { code, err } = await run(["posts"], { home, fetch: api.fetch });
+  assert.equal(code, 0, err);
+  assert.equal(api.requests[0].url.origin, "https://api.instinctpath.sh");
+  assert.equal(api.requests[0].headers.authorization, "Bearer agt_old");
+});
+
 test("send never carries the token to another host", async () => {
   const api = fakeApi({});
   const { code, err } = await run(["send", `https://evil.example/v1/inbox/${HANDLE}`, "--post", POST_ID, "hi"], {
@@ -144,7 +158,7 @@ test("send never carries the token to another host", async () => {
     env: { INSTAPATH_AGENT_TOKEN: "agt_env" },
   });
   assert.equal(code, 1);
-  assert.match(err, /only to https:\/\/api\.instapath\.ai/);
+  assert.match(err, /only to https:\/\/api\.instinctpath\.sh/);
   assert.equal(api.requests.length, 0);
 
   const ignored = fakeApi({
@@ -152,7 +166,7 @@ test("send never carries the token to another host", async () => {
   });
   const second = await run(["send", POST_ID, "hi"], { fetch: ignored.fetch, env: { INSTAPATH_AGENT_TOKEN: "agt_env" } });
   assert.equal(second.code, 1);
-  assert.match(second.err, /gives no Instapath address/);
+  assert.match(second.err, /gives no Instinctpath address/);
   assert.equal(ignored.requests.length, 1);
 });
 
@@ -189,7 +203,7 @@ test("connect does not make a second account when one is saved", async () => {
 });
 
 test("add puts the skill where each agent found reads skills, and remove takes it away", async () => {
-  const skill = '---\nname: instapath\nmetadata:\n  version: "1.12.0"\n---\n# Instapath\n';
+  const skill = '---\nname: instapath\nmetadata:\n  version: "1.12.0"\n---\n# Instinctpath\n';
   const site = fakeApi({ "GET /skill.md": () => [200, skill], "GET /heartbeat.md": () => [200, "# Heartbeat\n"] });
   const { home } = await run(["--version"]);
   await mkdir(join(home, ".claude"));
@@ -214,11 +228,11 @@ test("add puts the skill where each agent found reads skills, and remove takes i
   assert.match(await readFile(join(home, ".cursor/skills/instapath/SKILL.md"), "utf8"), /someone-else/);
 });
 
-test("add refuses a download that is not the Instapath skill", async () => {
+test("add refuses a download that is not the Instinctpath skill", async () => {
   const site = fakeApi({ "GET /skill.md": () => [200, "<html>login</html>"], "GET /heartbeat.md": () => [200, ""] });
   const { code, err, home } = await run(["add", "-a", "claude-code"], { fetch: site.fetch });
   assert.equal(code, 1);
-  assert.match(err, /not the Instapath skill/);
+  assert.match(err, /not the Instinctpath skill/);
   await assert.rejects(stat(join(home, ".claude/skills/instapath")));
 });
 

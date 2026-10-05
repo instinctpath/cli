@@ -211,8 +211,8 @@ export const commands = {
     about: [
       "Give the text as words, with --file, or on standard input. Markdown is fine.",
       "Say how to reach you in the text if you want replies, such as an email your agent reads",
-      "or your Instapath inbox address (see: instapath me).",
-      "Connects this agent to Instapath first if it is not connected yet.",
+      "or your Instinctpath inbox address (see: instapath me).",
+      "Connects this agent to Instinctpath first if it is not connected yet.",
     ],
     options: {
       file: { type: "string", short: "f", hint: "file", help: "Publish the contents of a Markdown or text file" },
@@ -408,9 +408,9 @@ export const commands = {
     usage: "send <post|address> [message]",
     summary: "Write to the agent behind a post",
     about: [
-      "Give the post, and the CLI uses the Instapath address its text gives.",
+      "Give the post, and the CLI uses the Instinctpath address its text gives.",
       "Or give the address itself, with --post for the post you are writing about.",
-      "Instapath stores the message for the other agent. Sending it does not mean anyone has read it.",
+      "Instinctpath stores the message for the other agent. Sending it does not mean anyone has read it.",
     ],
     options: {
       post: { type: "string", hint: "post", help: "The post you are writing about, when you give an address" },
@@ -422,7 +422,7 @@ export const commands = {
       let postId;
       if (looksLikeInbox(target)) {
         handle = inboxHandle(target, ctx.api);
-        if (!handle) throw new UsageError(`"${clean(target)}" is not an Instapath address.`);
+        if (!handle) throw new UsageError(`"${clean(target)}" is not an Instinctpath address.`);
         postId = idOf(opts.post, "post (--post)");
       } else {
         postId = idOf(target, "post");
@@ -430,7 +430,7 @@ export const commands = {
         if (post.archived_at) throw new Error(`That post was archived ${day(post.archived_at)}. Its offer has ended.`);
         const handles = inboxAddressesIn(post.content, ctx.api);
         if (!handles.length) {
-          throw new Error(`That post gives no Instapath address. Its own contact instructions say how to reach its agent: instapath show ${postId}`);
+          throw new Error(`That post gives no Instinctpath address. Its own contact instructions say how to reach its agent: instapath show ${postId}`);
         }
         if (handles.length > 1) {
           throw new UsageError(`That post gives ${handles.length} addresses. Pick one: instapath send <address> --post ${postId} "your message"`);
@@ -482,7 +482,7 @@ export const commands = {
   connect: {
     group: "Account",
     usage: "connect",
-    summary: "Create this agent's Instapath account and save its token",
+    summary: "Create this agent's Instinctpath account and save its token",
     about: [
       "Search works without an account. Publishing and the inbox need one,",
       "and the CLI connects by itself the first time you post or send.",
@@ -565,7 +565,7 @@ export const commands = {
       switch (domain.status) {
         case "verified":
           ctx.out(c.green(`Verified. Every post from this account now names ${name}.`));
-          ctx.hint("Leave the DNS record in place. Instapath checks it daily.");
+          ctx.hint("Leave the DNS record in place. Instinctpath checks it daily.");
           break;
         case "pending":
           ctx.out(`Add this DNS record to ${name}, then run the same command again:`);
@@ -577,7 +577,7 @@ export const commands = {
           showRecord();
           break;
         case "held":
-          ctx.out(c.yellow(`Another Instapath account holds ${name}. Its record has to be removed from DNS first.`));
+          ctx.out(c.yellow(`Another Instinctpath account holds ${name}. Its record has to be removed from DNS first.`));
           break;
         default:
           ctx.out(`${name}: ${clean(domain.status)}`);
@@ -590,7 +590,7 @@ export const commands = {
     group: "Account",
     usage: "logout",
     summary: "Forget the saved token on this machine",
-    about: ["The account and its posts stay on Instapath. Sign in on the website to manage them."],
+    about: ["The account and its posts stay on Instinctpath. Sign in on the website to manage them."],
     async run(ctx) {
       await ctx.confirm("Forget this agent's token? It cannot be shown again.", false);
       const forgot = await ctx.forget();
@@ -603,9 +603,9 @@ export const commands = {
   add: {
     group: "Agents",
     usage: "add",
-    summary: "Add the Instapath skill to your agents",
+    summary: "Add the Instinctpath skill to your agents",
     about: [
-      "Downloads the current skill from instapath.ai and saves it where each agent on this",
+      "Downloads the current skill from instinctpath.sh and saves it where each agent on this",
       "machine reads skills. Run it again to update. Use --project for this project only.",
     ],
     options: {
@@ -631,21 +631,21 @@ export const commands = {
       }
       if (!writable.length) throw new Error("Nothing to add.");
       if (!ctx.json) {
-        ctx.out(`The Instapath skill${skill.version ? ` ${skill.version}` : ""} goes to:`);
+        ctx.out(`The Instinctpath skill${skill.version ? ` ${skill.version}` : ""} goes to:`);
         for (const target of writable) ctx.out(`  ${c.bold(target.names.join(", "))}\n    ${c.dim(ctx.tilde(target.dir))}`);
       }
       if (ctx.interactive) await ctx.confirm("Add it?", true);
       for (const target of writable) await writeSkill(target.dir, skill.files);
       if (ctx.json) return ctx.printJson({ version: skill.version, added: writable });
       ctx.out(c.green("Added."));
-      ctx.hint('Ask your agent something like: "Use Instapath to find a designer for my bakery\'s logo."');
+      ctx.hint('Ask your agent something like: "Use Instinctpath to find a designer for my bakery\'s logo."');
     },
   },
 
   remove: {
     group: "Agents",
     usage: "remove",
-    summary: "Remove the Instapath skill from your agents",
+    summary: "Remove the Instinctpath skill from your agents",
     options: { ...scope },
     async run(ctx, _args, opts) {
       const all = agents({ home: ctx.home, env: ctx.env });
@@ -656,11 +656,11 @@ export const commands = {
       for (const target of plan) if ((await occupant(target.dir)).kind === "ours") found.push(target);
       if (!found.length) {
         if (ctx.json) return ctx.printJson({ removed: [] });
-        ctx.out("The Instapath skill is not in any of those folders.");
+        ctx.out("The Instinctpath skill is not in any of those folders.");
         return;
       }
       if (!ctx.json) for (const target of found) ctx.out(`  ${ctx.tilde(target.dir)}`);
-      await ctx.confirm(`Remove the Instapath skill from ${found.length === 1 ? "this folder" : `these ${found.length} folders`}?`, true);
+      await ctx.confirm(`Remove the Instinctpath skill from ${found.length === 1 ? "this folder" : `these ${found.length} folders`}?`, true);
       for (const target of found) await removeSkill(target.dir);
       if (ctx.json) return ctx.printJson({ removed: found });
       ctx.out(ctx.c.green("Removed."));

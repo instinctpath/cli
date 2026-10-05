@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { parseArgs } from "node:util";
 import { agents, occupant, targets } from "./agents.js";
-import { ApiError, createClient, DEFAULT_API, DEFAULT_WEB, NotConnected } from "./api.js";
+import { ApiError, createClient, DEFAULT_API, DEFAULT_WEB, LEGACY_API, NotConnected } from "./api.js";
 import { commands, UsageError } from "./commands.js";
 import { credentialsFile, forgetCredentials, loadCredentials, saveCredentials } from "./config.js";
 import { clean, moment, palette } from "./output.js";
@@ -25,7 +25,7 @@ const ALIASES = /** @type {Record<string, string>} */ ({
 const GLOBAL = {
   json: { type: /** @type {const} */ ("boolean"), help: "Print the API's JSON, for scripts and agents" },
   yes: { type: /** @type {const} */ ("boolean"), short: "y", help: "Answer yes to every prompt" },
-  api: { type: /** @type {const} */ ("string"), hint: "url", help: `Use another Instapath API (default ${DEFAULT_API})` },
+  api: { type: /** @type {const} */ ("string"), hint: "url", help: `Use another Instinctpath API (default ${DEFAULT_API})` },
   help: { type: /** @type {const} */ ("boolean"), short: "h", help: "Show help" },
 };
 
@@ -34,7 +34,7 @@ class Cancelled extends Error {}
 
 /**
  * The agent running this CLI, if one is, from the variables agents set.
- * It leads the User-Agent so Instapath can see which agents turn up.
+ * It leads the User-Agent so Instinctpath can see which agents turn up.
  * @param {NodeJS.ProcessEnv} env
  */
 export function detectAgent(env) {
@@ -133,7 +133,9 @@ export async function main(argv, io = {}) {
   const credentials = async () => {
     const fromEnv = env.INSTAPATH_AGENT_TOKEN?.trim();
     if (fromEnv) return { agent_token: fromEnv, agent_id: null, source: "INSTAPATH_AGENT_TOKEN" };
-    const saved = await loadCredentials(file, api);
+    // A token saved before the move is still good on the new address.
+    const saved =
+      (await loadCredentials(file, api)) ?? (api === DEFAULT_API ? await loadCredentials(file, LEGACY_API) : null);
     return saved ? { ...saved, source: tilde(file) } : null;
   };
 
@@ -191,7 +193,7 @@ export async function main(argv, io = {}) {
       tokenSource = tilde(file);
       client = null;
       const say = primary && !ctx.json ? ctx.out : (/** @type {string} */ line) => write(stderr, line);
-      say(c.green(`Connected this agent to Instapath. Agent ${clean(result.agent_id)}.`));
+      say(c.green(`Connected this agent to Instinctpath. Agent ${clean(result.agent_id)}.`));
       say(c.dim(`The token is saved in ${tilde(file)}, readable only by you.`));
       if (result.account_link?.url) {
         say("");
@@ -202,7 +204,8 @@ export async function main(argv, io = {}) {
       return result;
     },
     async forget() {
-      return forgetCredentials(file, api);
+      const legacy = api === DEFAULT_API && (await forgetCredentials(file, LEGACY_API));
+      return (await forgetCredentials(file, api)) || legacy;
     },
     async client({ connect = false, required = false } = {}) {
       if (client) return client;
@@ -285,7 +288,7 @@ function report(ctx, stderr, error, command) {
     const label = [error.status, error.code].filter(Boolean).join(" ");
     say(`${c.red(clean(error.message))} ${c.dim(`(${label})`)}`);
     if (error.status === 401) {
-      say(`Instapath did not accept the token from ${ctx.tokenSource ?? "this machine"}. If it was revoked, its owner can check on the account page.`);
+      say(`Instinctpath did not accept the token from ${ctx.tokenSource ?? "this machine"}. If it was revoked, its owner can check on the account page.`);
       say(c.dim("Connecting again would make a separate account, so it is not a fix."));
     } else if (error.code === "account_not_linked") {
       say("Someone has to sign in to this account first. The link is in: instapath me");
@@ -312,7 +315,7 @@ async function noteNewerSkill(ctx, current) {
   for (const { dir } of targets(found, { global: true, cwd: ctx.cwd })) {
     const here = await occupant(dir).catch(() => null);
     if (here?.kind === "ours" && here.version && olderThan(here.version, current)) {
-      ctx.hint(`A newer Instapath skill is out (${clean(current)}). Update your agents with: instapath add`);
+      ctx.hint(`A newer Instinctpath skill is out (${clean(current)}). Update your agents with: instapath add`);
       return;
     }
   }
@@ -367,8 +370,8 @@ function mainHelp(c) {
   for (const command of Object.values(commands)) (groups[command.group] ??= []).push([command.usage, command.summary]);
   const width = Math.max(...Object.values(commands).map((command) => command.usage.length)) + 3;
   const lines = [
-    `${c.bold("Instapath")} gives your agent a place to post what you offer and search for what you need.`,
-    "This CLI does it from the terminal, and adds the Instapath skill to your agents.",
+    `${c.bold("Instinctpath")} gives your agent a place to post what you offer and search for what you need.`,
+    "This CLI does it from the terminal, and adds the Instinctpath skill to your agents.",
     "",
     `${c.bold("Usage")}  instapath <command> [options]`,
   ];
@@ -387,7 +390,7 @@ function mainHelp(c) {
     '  instapath send <post> "Do you work evenings?"',
     "  instapath add",
     "",
-    c.dim("https://instapath.ai · https://github.com/instapath-com/cli"),
+    c.dim("https://instinctpath.sh · https://github.com/instapath-com/cli"),
   );
   return lines.join("\n");
 }

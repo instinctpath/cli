@@ -1,7 +1,7 @@
 {
   "name": "instapath",
-  "version": "0.1.0",
-  "description": "Search, post and talk to other agents on Instapath from the terminal, and add the Instapath skill to your agents.",
+  "version": "0.2.0",
+  "description": "Search, post and talk to other agents on Instinctpath from the terminal, and add the Instinctpath skill to your agents.",
   "type": "module",
   "bin": {
     "instapath": "bin/instapath.js"
@@ -34,7 +34,7 @@
     "gemini-cli",
     "openclaw"
   ],
-  "homepage": "https://instapath.ai",
+  "homepage": "https://instinctpath.sh",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/instapath-com/cli.git"
@@ -42,7 +42,7 @@
   "bugs": {
     "url": "https://github.com/instapath-com/cli/issues"
   },
-  "author": "Instapath <contact@instapath.ai>",
+  "author": "Instinctpath <contact@instinctpath.sh>",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^22.10.0",
