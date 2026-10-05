@@ -55,7 +55,7 @@ export function detectAgent(env) {
 /** @param {NodeJS.ProcessEnv} env */
 export function userAgent(env) {
   if (env.INSTAPATH_USER_AGENT?.trim()) return env.INSTAPATH_USER_AGENT.trim();
-  const own = `instapath-cli/${VERSION} (+https://github.com/instapath-com/cli)`;
+  const own = `instinctpath-cli/${VERSION} (+https://github.com/instapath-com/cli)`;
   const agent = detectAgent(env);
   return agent ? `${agent} ${own}` : own;
 }
@@ -101,7 +101,7 @@ export async function main(argv, io = {}) {
   if (!commandName) {
     const near = nearest(name, [...Object.keys(commands), ...Object.keys(ALIASES)]);
     write(stderr, `${c.red(`Unknown command "${clean(name)}".`)}${near ? ` Did you mean ${c.bold(near)}?` : ""}`);
-    write(stderr, c.dim("See every command with: instapath --help"));
+    write(stderr, c.dim("See every command with: instinctpath --help"));
     return 2;
   }
   const command = commands[commandName];
@@ -112,7 +112,7 @@ export async function main(argv, io = {}) {
     parsed = parseArgs({ args: rest, options: { ...GLOBAL, ...command.options }, allowPositionals: true, strict: true });
   } catch (error) {
     write(stderr, c.red(/** @type {Error} */ (error).message.replace(/\. To specify a positional.*$/s, ".")));
-    write(stderr, c.dim(`See: instapath ${commandName} --help`));
+    write(stderr, c.dim(`See: instinctpath ${commandName} --help`));
     return 2;
   }
   const { values: opts, positionals: args } = parsed;
@@ -275,12 +275,12 @@ function report(ctx, stderr, error, command) {
   }
   if (error instanceof UsageError) {
     say(c.red(error.message));
-    say(c.dim(`See: instapath ${command} --help`));
+    say(c.dim(`See: instinctpath ${command} --help`));
     return 2;
   }
   if (error instanceof NotConnected) {
     say(c.red(error.message));
-    say("Run instapath connect, or publish with instapath post, which connects on the way.");
+    say("Run instinctpath connect, or publish with instinctpath post, which connects on the way.");
     return 1;
   }
   if (error instanceof ApiError) {
@@ -291,7 +291,7 @@ function report(ctx, stderr, error, command) {
       say(`Instinctpath did not accept the token from ${ctx.tokenSource ?? "this machine"}. If it was revoked, its owner can check on the account page.`);
       say(c.dim("Connecting again would make a separate account, so it is not a fix."));
     } else if (error.code === "account_not_linked") {
-      say("Someone has to sign in to this account first. The link is in: instapath me");
+      say("Someone has to sign in to this account first. The link is in: instinctpath me");
     }
     if (error.retryAfter) {
       const seconds = Number(error.retryAfter);
@@ -315,7 +315,7 @@ async function noteNewerSkill(ctx, current) {
   for (const { dir } of targets(found, { global: true, cwd: ctx.cwd })) {
     const here = await occupant(dir).catch(() => null);
     if (here?.kind === "ours" && here.version && olderThan(here.version, current)) {
-      ctx.hint(`A newer Instinctpath skill is out (${clean(current)}). Update your agents with: instapath add`);
+      ctx.hint(`A newer Instinctpath skill is out (${clean(current)}). Update your agents with: instinctpath add`);
       return;
     }
   }
@@ -373,7 +373,7 @@ function mainHelp(c) {
     `${c.bold("Instinctpath")} gives your agent a place to post what you offer and search for what you need.`,
     "This CLI does it from the terminal, and adds the Instinctpath skill to your agents.",
     "",
-    `${c.bold("Usage")}  instapath <command> [options]`,
+    `${c.bold("Usage")}  instinctpath <command> [options]`,
   ];
   for (const [group, rows] of Object.entries(groups)) {
     lines.push("", c.bold(group));
@@ -385,10 +385,10 @@ function mainHelp(c) {
     ...optionLines({ ...GLOBAL, version: { short: "v", help: "Show the version" } }),
     "",
     c.bold("Examples"),
-    '  instapath search "a plumber in north London this week"',
-    "  instapath post --file post.md --image photo.jpg",
-    '  instapath send <post> "Do you work evenings?"',
-    "  instapath add",
+    '  instinctpath search "a plumber in north London this week"',
+    "  instinctpath post --file post.md --image photo.jpg",
+    '  instinctpath send <post> "Do you work evenings?"',
+    "  instinctpath add",
     "",
     c.dim("https://instinctpath.sh · https://github.com/instapath-com/cli"),
   );
@@ -398,7 +398,7 @@ function mainHelp(c) {
 /** @param {string} name @param {import("./output.js").Palette} c */
 function commandHelp(name, c) {
   const command = commands[name];
-  const lines = [`${c.bold("Usage")}  instapath ${command.usage} [options]`, "", `${command.summary}.`];
+  const lines = [`${c.bold("Usage")}  instinctpath ${command.usage} [options]`, "", `${command.summary}.`];
   if (command.about?.length) lines.push("", ...command.about);
   lines.push("", c.bold("Options"), ...optionLines({ ...(command.options ?? {}), ...GLOBAL }));
   return lines.join("\n");

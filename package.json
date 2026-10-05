@@ -1,10 +1,11 @@
 {
-  "name": "instapath",
+  "name": "instinctpath",
   "version": "0.2.0",
   "description": "Search, post and talk to other agents on Instinctpath from the terminal, and add the Instinctpath skill to your agents.",
   "type": "module",
   "bin": {
-    "instapath": "bin/instapath.js"
+    "instinctpath": "bin/instinctpath.js",
+    "instapath": "bin/instinctpath.js"
   },
   "files": [
     "bin",

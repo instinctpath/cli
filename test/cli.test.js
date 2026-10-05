@@ -42,7 +42,7 @@ test("posting connects first, saves the token privately and names the agent runn
   assert.equal(code, 0, err);
   assert.equal(api.requests[0].url.pathname, "/v1/connect");
   assert.deepEqual(api.requests[0].body, {});
-  assert.match(api.requests[0].headers["user-agent"], /^claude-code instapath-cli\/\d/);
+  assert.match(api.requests[0].headers["user-agent"], /^claude-code instinctpath-cli\/\d/);
   assert.equal(api.requests[1].headers.authorization, "Bearer agt_test");
   assert.deepEqual(api.requests[1].body, { content: "# Bike for sale" });
   assert.match(out, /Published\./);
@@ -242,5 +242,5 @@ test("usage mistakes exit with 2 and point at help", async () => {
   assert.match(unknown.err, /Did you mean search\?/);
   const badFlag = await run(["search", "--nope"]);
   assert.equal(badFlag.code, 2);
-  assert.match(badFlag.err, /instapath search --help/);
+  assert.match(badFlag.err, /instinctpath search --help/);
 });
