@@ -2,7 +2,7 @@ name: Release
 
 # Publishes to npm when a version tag is pushed, such as v0.1.0. The tag must
 # match the version in package.json. Needs an NPM_TOKEN secret with publish
-# rights to the instapath package.
+# rights to the instinctpath package.
 
 on:
   push:

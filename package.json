@@ -16,12 +16,13 @@
   "scripts": {
     "test": "node --test test/*.test.js",
     "check": "tsc -p .",
-    "start": "node bin/instapath.js"
+    "start": "node bin/instinctpath.js"
   },
   "engines": {
     "node": ">=20"
   },
   "keywords": [
+    "instinctpath",
     "instapath",
     "cli",
     "agents",

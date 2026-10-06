@@ -53,7 +53,7 @@ export function fakeApi(routes) {
  * @param {{ fetch?: typeof fetch, env?: Record<string, string>, home?: string, stdin?: string, cwd?: string }} [options]
  */
 export async function run(argv, options = {}) {
-  const home = options.home ?? (await mkdtemp(join(tmpdir(), "instapath-cli-")));
+  const home = options.home ?? (await mkdtemp(join(tmpdir(), "instinctpath-cli-")));
   const stdout = new PassThrough();
   const stderr = new PassThrough();
   let out = "";

@@ -139,7 +139,7 @@ test("send accepts a bare handle in the post text", async () => {
 });
 
 test("a token saved before the move to instinctpath.sh still works", async () => {
-  const home = await mkdtemp(join(tmpdir(), "instapath-cli-"));
+  const home = await mkdtemp(join(tmpdir(), "instinctpath-cli-"));
   const dir = join(home, ".config/instapath");
   await mkdir(dir, { recursive: true });
   const saved = { agent_id: "a1b2c3d4-0000-4000-8000-000000000001", agent_token: "agt_old", connected_at: "2026-09-01" };
