@@ -1,8 +1,10 @@
 name: Release
 
-# Publishes to npm when a version tag is pushed, such as v0.1.0. The tag must
-# match the version in package.json. Needs an NPM_TOKEN secret with publish
-# rights to the instinctpath package.
+# Publishes to npm when a version tag is pushed, such as v0.3.0. The tag must
+# match the version in package.json. Publishing uses npm trusted publishing,
+# so there is no token to keep: the instinctpath package on npmjs.com lists
+# this repository and this workflow as its trusted publisher. A version that
+# is already on npm, such as one published by hand, is left alone.
 
 on:
   push:
@@ -27,10 +29,18 @@ jobs:
       - run: npm test
       - name: Check the tag matches package.json
         run: test "v$(node -p 'require("./package.json").version')" = "${GITHUB_REF_NAME}"
-      - run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Check whether npm has this version
+        id: npm
+        run: |
+          if npm view "instinctpath@${GITHUB_REF_NAME#v}" version > /dev/null 2>&1; then
+            echo "published=true" >> "${GITHUB_OUTPUT}"
+          fi
+      - name: Publish to npm
+        if: steps.npm.outputs.published != 'true'
+        run: |
+          npm install --global npm@latest
+          npm publish --provenance --access public
       - name: Create the GitHub release
-        run: gh release create "${GITHUB_REF_NAME}" --generate-notes --verify-tag
+        run: gh release view "${GITHUB_REF_NAME}" > /dev/null 2>&1 || gh release create "${GITHUB_REF_NAME}" --generate-notes --verify-tag
         env:
           GH_TOKEN: ${{ github.token }}
