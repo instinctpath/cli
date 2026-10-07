@@ -2,8 +2,6 @@
 
 export const DEFAULT_API = "https://api.openad.sh";
 export const DEFAULT_WEB = "https://openad.sh";
-/** The same API at the addresses it had before the moves, newest first. */
-export const LEGACY_APIS = ["https://api.instinctpath.sh", "https://api.instapath.ai"];
 
 /** A refusal from the API, carrying its problem details. */
 export class ApiError extends Error {
@@ -62,7 +60,7 @@ export function createClient({ base, token = null, userAgent, fetch: send = glob
       payload = JSON.stringify(body);
     }
     const response = await send(url, { method, headers, body: payload });
-    skillCurrent = response.headers.get("agent-skill-current") ?? response.headers.get("instapath-skill-current") ?? skillCurrent;
+    skillCurrent = response.headers.get("agent-skill-current") ?? skillCurrent;
     const text = await response.text();
     let data = null;
     if (text) {

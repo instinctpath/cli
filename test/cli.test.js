@@ -42,12 +42,12 @@ test("posting connects first, saves the token privately and names the agent runn
   assert.equal(code, 0, err);
   assert.equal(api.requests[0].url.pathname, "/v1/connect");
   assert.deepEqual(api.requests[0].body, {});
-  assert.match(api.requests[0].headers["user-agent"], /^claude-code openad-cli\/\d/);
+  assert.match(api.requests[0].headers["user-agent"], /^claude-code ads-cli\/\d/);
   assert.equal(api.requests[1].headers.authorization, "Bearer agt_test");
   assert.deepEqual(api.requests[1].body, { content: "# Bike for sale" });
   assert.match(out, /Published\./);
   assert.match(err, /Connected this agent to OpenAd/);
-  const file = join(home, ".config/openad/credentials.json");
+  const file = join(home, ".config/ads/credentials.json");
   assert.equal((await stat(file)).mode & 0o777, 0o600);
   assert.equal(JSON.parse(await readFile(file, "utf8"))["https://api.openad.sh"].agent_token, "agt_test");
 
@@ -61,7 +61,7 @@ test("posting connects first, saves the token privately and names the agent runn
 
 test("the post text can come from standard input or a file", async () => {
   const api = fakeApi({ "POST /v1/posts": ({ body }) => [201, post({ content: body.content })] });
-  const env = { OPENAD_AGENT_TOKEN: "agt_env" };
+  const env = { ADS_AGENT_TOKEN: "agt_env" };
   await run(["post"], { fetch: api.fetch, env, stdin: "From stdin\n" });
   assert.equal(api.requests[0].body.content, "From stdin\n");
   const { home } = await run(["--version"]);
@@ -72,7 +72,7 @@ test("the post text can come from standard input or a file", async () => {
 
 test("local images go up as multipart, and other formats are refused before sending", async () => {
   const api = fakeApi({ "POST /v1/posts": () => [201, post()] });
-  const env = { OPENAD_AGENT_TOKEN: "agt_env" };
+  const env = { ADS_AGENT_TOKEN: "agt_env" };
   const { home } = await run(["--version"]);
   await writeFile(join(home, "a.png"), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
   await writeFile(join(home, "b.gif"), "GIF89a");
@@ -93,9 +93,9 @@ test("edit sends the current revision and keeps the images", async () => {
     [`GET /v1/posts/${POST_ID}`]: () => [200, current],
     [`PUT /v1/posts/${POST_ID}`]: ({ body }) => [200, post({ ...body, revision: 4 })],
   });
-  const { code, out } = await run(["edit", `https://instinctpath.sh/posts/${POST_ID}`, "New", "text"], {
+  const { code, out } = await run(["edit", `https://openad.sh/posts/${POST_ID}`, "New", "text"], {
     fetch: api.fetch,
-    env: { OPENAD_AGENT_TOKEN: "agt_env" },
+    env: { ADS_AGENT_TOKEN: "agt_env" },
   });
   assert.equal(code, 0);
   assert.deepEqual(api.requests[1].body, { revision: 3, content: "New text", images: current.images });
@@ -104,7 +104,7 @@ test("edit sends the current revision and keeps the images", async () => {
 
 test("delete asks first, and refuses to guess without a terminal", async () => {
   const api = fakeApi({ [`DELETE /v1/posts/${POST_ID}`]: () => [200, { deleted: true }] });
-  const env = { OPENAD_AGENT_TOKEN: "agt_env" };
+  const env = { ADS_AGENT_TOKEN: "agt_env" };
   const refused = await run(["delete", POST_ID], { fetch: api.fetch, env });
   assert.equal(refused.code, 2);
   assert.match(refused.err, /--yes/);
@@ -121,7 +121,7 @@ test("send finds the address in the post and writes to it", async () => {
   });
   const { code, out } = await run(["send", POST_ID, "Do you work evenings?"], {
     fetch: api.fetch,
-    env: { OPENAD_AGENT_TOKEN: "agt_env" },
+    env: { ADS_AGENT_TOKEN: "agt_env" },
   });
   assert.equal(code, 0);
   assert.deepEqual(api.requests[1].body, { post_id: POST_ID, body: "Do you work evenings?" });
@@ -133,42 +133,16 @@ test("send accepts a bare handle in the post text", async () => {
     [`GET /v1/posts/${POST_ID}`]: () => [200, post({ content: `Reach me via inbox handle ${HANDLE}.` })],
     [`POST /v1/inbox/${HANDLE}`]: () => [202, { thread_id: THREAD_ID, message_id: THREAD_ID }],
   });
-  const { code } = await run(["send", POST_ID, "Hello"], { fetch: api.fetch, env: { OPENAD_AGENT_TOKEN: "agt_env" } });
+  const { code } = await run(["send", POST_ID, "Hello"], { fetch: api.fetch, env: { ADS_AGENT_TOKEN: "agt_env" } });
   assert.equal(code, 0);
   assert.equal(api.requests[1].url.pathname, `/v1/inbox/${HANDLE}`);
-});
-
-test("a token saved before the move to instinctpath.sh still works", async () => {
-  const home = await mkdtemp(join(tmpdir(), "openad-cli-"));
-  const dir = join(home, ".config/openad");
-  await mkdir(dir, { recursive: true });
-  const saved = { agent_id: "a1b2c3d4-0000-4000-8000-000000000001", agent_token: "agt_old", connected_at: "2026-09-01" };
-  await writeFile(join(dir, "credentials.json"), JSON.stringify({ "https://api.instapath.ai": saved }));
-  const api = fakeApi({ "GET /v1/posts": () => [200, { posts: [], next_cursor: null }] });
-  const { code, err } = await run(["posts"], { home, fetch: api.fetch });
-  assert.equal(code, 0, err);
-  assert.equal(api.requests[0].url.origin, "https://api.openad.sh");
-  assert.equal(api.requests[0].headers.authorization, "Bearer agt_old");
-});
-
-test("a token saved under api.instinctpath.sh still works on api.openad.sh", async () => {
-  const home = await mkdtemp(join(tmpdir(), "openad-cli-"));
-  const dir = join(home, ".config/openad");
-  await mkdir(dir, { recursive: true });
-  const saved = { agent_id: "a1b2c3d4-0000-4000-8000-000000000002", agent_token: "agt_prev", connected_at: "2026-10-06" };
-  await writeFile(join(dir, "credentials.json"), JSON.stringify({ "https://api.instinctpath.sh": saved }));
-  const api = fakeApi({ "GET /v1/posts": () => [200, { posts: [], next_cursor: null }] });
-  const { code, err } = await run(["posts"], { home, fetch: api.fetch });
-  assert.equal(code, 0, err);
-  assert.equal(api.requests[0].url.origin, "https://api.openad.sh");
-  assert.equal(api.requests[0].headers.authorization, "Bearer agt_prev");
 });
 
 test("send never carries the token to another host", async () => {
   const api = fakeApi({});
   const { code, err } = await run(["send", `https://evil.example/v1/inbox/${HANDLE}`, "--post", POST_ID, "hi"], {
     fetch: api.fetch,
-    env: { OPENAD_AGENT_TOKEN: "agt_env" },
+    env: { ADS_AGENT_TOKEN: "agt_env" },
   });
   assert.equal(code, 1);
   assert.match(err, /only to https:\/\/api\.openad\.sh/);
@@ -177,7 +151,7 @@ test("send never carries the token to another host", async () => {
   const ignored = fakeApi({
     [`GET /v1/posts/${POST_ID}`]: () => [200, post({ content: `Write to https://evil.example/v1/inbox/${HANDLE}` })],
   });
-  const second = await run(["send", POST_ID, "hi"], { fetch: ignored.fetch, env: { OPENAD_AGENT_TOKEN: "agt_env" } });
+  const second = await run(["send", POST_ID, "hi"], { fetch: ignored.fetch, env: { ADS_AGENT_TOKEN: "agt_env" } });
   assert.equal(second.code, 1);
   assert.match(second.err, /gives no OpenAd address/);
   assert.equal(ignored.requests.length, 1);
@@ -191,7 +165,7 @@ test("the API's refusal is shown with its code and when to retry", async () => {
       { "retry-after": "120" },
     ],
   });
-  const { code, err } = await run(["reply", THREAD_ID, "hello"], { fetch: api.fetch, env: { OPENAD_AGENT_TOKEN: "agt_env" } });
+  const { code, err } = await run(["reply", THREAD_ID, "hello"], { fetch: api.fetch, env: { ADS_AGENT_TOKEN: "agt_env" } });
   assert.equal(code, 1);
   assert.match(err, /had enough for today\. \(429 inbox_full\)/);
   assert.match(err, /Try again in 120 seconds/);
@@ -199,9 +173,9 @@ test("the API's refusal is shown with its code and when to retry", async () => {
 
 test("a refused token is not fixed by connecting again", async () => {
   const api = fakeApi({ "GET /v1/me": () => [401, { title: "Unauthorized", status: 401, detail: "Invalid token" }] });
-  const { code, err } = await run(["me"], { fetch: api.fetch, env: { OPENAD_AGENT_TOKEN: "agt_bad" } });
+  const { code, err } = await run(["me"], { fetch: api.fetch, env: { ADS_AGENT_TOKEN: "agt_bad" } });
   assert.equal(code, 1);
-  assert.match(err, /OPENAD_AGENT_TOKEN/);
+  assert.match(err, /ADS_AGENT_TOKEN/);
   assert.match(err, /separate account/);
 });
 
@@ -241,80 +215,6 @@ test("add puts the skill where each agent found reads skills, and remove takes i
   assert.match(await readFile(join(home, ".cursor/skills/openad/SKILL.md"), "utf8"), /someone-else/);
 });
 
-test("copies saved under the old ids, instinctpath and instapath, are replaced by add and cleared by remove", async () => {
-  const skill = '---\nname: openad\nmetadata:\n  version: "1.19.0"\n---\n# OpenAd\n';
-  const site = fakeApi({ "GET /skill.md": () => [200, skill], "GET /heartbeat.md": () => [200, "# Heartbeat\n"] });
-  const { home } = await run(["--version"]);
-  const olds = [
-    { dir: join(home, ".claude/skills/instinctpath"), name: "instinctpath", version: "1.18.0" },
-    { dir: join(home, ".claude/skills/instapath"), name: "instapath", version: "1.14.0" },
-  ];
-  const saveOld = async () => {
-    for (const { dir, name, version } of olds) {
-      await mkdir(dir, { recursive: true });
-      await writeFile(join(dir, "SKILL.md"), `---\nname: ${name}\nmetadata:\n  version: "${version}"\n---\n`);
-    }
-  };
-
-  await saveOld();
-  const added = await run(["add", "-a", "claude-code"], { fetch: site.fetch, home });
-  assert.equal(added.code, 0, added.err);
-  assert.equal(await readFile(join(home, ".claude/skills/openad/SKILL.md"), "utf8"), skill);
-  for (const { dir } of olds) await assert.rejects(stat(dir));
-
-  await saveOld();
-  const removed = await run(["remove", "-y", "-a", "claude-code"], { home });
-  assert.equal(removed.code, 0, removed.err);
-  for (const { dir } of olds) await assert.rejects(stat(dir));
-  await assert.rejects(stat(join(home, ".claude/skills/openad")));
-});
-
-test("a copy saved under an old id still hears when a newer skill is out", async () => {
-  const api = fakeApi({ "POST /v1/search": () => [200, { posts: [post()] }, { "Agent-Skill-Current": "1.19.0" }] });
-  const { home } = await run(["--version"]);
-  const old = join(home, ".claude/skills/instinctpath");
-  await mkdir(old, { recursive: true });
-  await writeFile(join(old, "SKILL.md"), '---\nname: instinctpath\nmetadata:\n  version: "1.18.0"\n---\n');
-
-  const { code, out } = await run(["search", "plumber"], { fetch: api.fetch, home });
-  assert.equal(code, 0);
-  assert.match(out, /A newer OpenAd skill is out \(1\.19\.0\)\. Update your agents with: openad add/);
-});
-
-test("a token saved in the old config folder is moved to the new one on first use", async () => {
-  const home = await mkdtemp(join(tmpdir(), "openad-cli-"));
-  const old = join(home, ".config/instapath");
-  await mkdir(old, { recursive: true });
-  const saved = { agent_id: "a1b2c3d4-0000-4000-8000-000000000003", agent_token: "agt_moved", connected_at: "2026-09-01" };
-  await writeFile(join(old, "credentials.json"), JSON.stringify({ "https://api.openad.sh": saved }));
-  const api = fakeApi({ "GET /v1/posts": () => [200, { posts: [], next_cursor: null }] });
-  // An empty setting leaves the config folder to its default.
-  const { code, err } = await run(["posts"], { home, fetch: api.fetch, env: { OPENAD_CONFIG_DIR: "" } });
-  assert.equal(code, 0, err);
-  assert.equal(api.requests[0].headers.authorization, "Bearer agt_moved");
-  const moved = JSON.parse(await readFile(join(home, ".config/openad/credentials.json"), "utf8"));
-  assert.equal(moved["https://api.openad.sh"].agent_token, "agt_moved");
-  await assert.rejects(stat(join(old, "credentials.json")));
-});
-
-test("the settings keep working under their old INSTAPATH_ names", async () => {
-  const api = fakeApi({ "GET /v1/posts": () => [200, { posts: [], next_cursor: null }] });
-  const { code, err } = await run(["posts"], { fetch: api.fetch, env: { INSTAPATH_AGENT_TOKEN: "agt_old_name" } });
-  assert.equal(code, 0, err);
-  assert.equal(api.requests[0].headers.authorization, "Bearer agt_old_name");
-});
-
-test("a newer skill is announced under the earlier header name too", async () => {
-  const api = fakeApi({ "POST /v1/search": () => [200, { posts: [post()] }, { "Instapath-Skill-Current": "1.19.0" }] });
-  const { home } = await run(["--version"]);
-  const old = join(home, ".claude/skills/openad");
-  await mkdir(old, { recursive: true });
-  await writeFile(join(old, "SKILL.md"), '---\nname: openad\nmetadata:\n  version: "1.18.0"\n---\n');
-  const { code, out } = await run(["search", "plumber"], { fetch: api.fetch, home });
-  assert.equal(code, 0);
-  assert.match(out, /A newer OpenAd skill is out \(1\.19\.0\)/);
-});
-
 test("add refuses a download that is not the OpenAd skill", async () => {
   const site = fakeApi({ "GET /skill.md": () => [200, "<html>login</html>"], "GET /heartbeat.md": () => [200, ""] });
   const { code, err, home } = await run(["add", "-a", "claude-code"], { fetch: site.fetch });
@@ -322,7 +222,7 @@ test("add refuses a download that is not the OpenAd skill", async () => {
   assert.match(err, /not the OpenAd skill/);
   await assert.rejects(stat(join(home, ".claude/skills/openad")));
 
-  const renamed = fakeApi({ "GET /skill.md": () => [200, "---\nname: instinctpath\n---\n"], "GET /heartbeat.md": () => [200, ""] });
+  const renamed = fakeApi({ "GET /skill.md": () => [200, "---\nname: another-skill\n---\n"], "GET /heartbeat.md": () => [200, ""] });
   const old = await run(["add", "-a", "claude-code"], { fetch: renamed.fetch, home });
   assert.equal(old.code, 1);
   assert.match(old.err, /not the OpenAd skill/);

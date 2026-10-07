@@ -53,7 +53,7 @@ export function fakeApi(routes) {
  * @param {{ fetch?: typeof fetch, env?: Record<string, string>, home?: string, stdin?: string, cwd?: string }} [options]
  */
 export async function run(argv, options = {}) {
-  const home = options.home ?? (await mkdtemp(join(tmpdir(), "openad-cli-")));
+  const home = options.home ?? (await mkdtemp(join(tmpdir(), "ads-cli-")));
   const stdout = new PassThrough();
   const stderr = new PassThrough();
   let out = "";
@@ -62,7 +62,7 @@ export async function run(argv, options = {}) {
   stderr.on("data", (chunk) => (err += chunk));
   const stdin = Object.assign(Readable.from(options.stdin === undefined ? [] : [options.stdin]), { isTTY: false });
   const code = await main(argv, {
-    env: { OPENAD_CONFIG_DIR: join(home, ".config/openad"), ...options.env },
+    env: { ADS_CONFIG_DIR: join(home, ".config/ads"), ...options.env },
     home,
     cwd: options.cwd ?? home,
     fetch: options.fetch ?? (async () => new Response("{}", { status: 500 })),

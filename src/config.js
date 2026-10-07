@@ -5,13 +5,12 @@ import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 /**
- * A setting under its current name, `OPENAD_<NAME>`, or the one it had before
- * the rename, `INSTAPATH_<NAME>`. Empty when neither is set.
+ * A setting from the environment, always named `ADS_<NAME>`. Empty when unset.
  * @param {NodeJS.ProcessEnv} env
  * @param {string} name
  */
 export function setting(env, name) {
-  return env[`OPENAD_${name}`]?.trim() || env[`INSTAPATH_${name}`]?.trim() || "";
+  return env[`ADS_${name}`]?.trim() || "";
 }
 
 /**
@@ -22,8 +21,8 @@ export function setting(env, name) {
 export function configDir(env, home) {
   const chosen = setting(env, "CONFIG_DIR");
   if (chosen) return chosen;
-  if (process.platform === "win32" && env.APPDATA?.trim()) return join(env.APPDATA.trim(), "openad");
-  return join(env.XDG_CONFIG_HOME?.trim() || join(home, ".config"), "openad");
+  if (process.platform === "win32" && env.APPDATA?.trim()) return join(env.APPDATA.trim(), "ads");
+  return join(env.XDG_CONFIG_HOME?.trim() || join(home, ".config"), "ads");
 }
 
 /** @param {NodeJS.ProcessEnv} env @param {string} home */
@@ -37,31 +36,9 @@ async function readAll(file) {
     const parsed = JSON.parse(await readFile(file, "utf8"));
     return parsed && typeof parsed === "object" ? parsed : {};
   } catch (error) {
-    if (/** @type {NodeJS.ErrnoException} */ (error).code === "ENOENT") return adoptEarlierFile(file);
+    if (/** @type {NodeJS.ErrnoException} */ (error).code === "ENOENT") return {};
     throw new Error(`Could not read ${file}. Fix or delete it, then try again.`);
   }
-}
-
-/**
- * Tokens saved before the rename sit in `.../instapath/credentials.json`. The
- * first read moves them next to where the new name keeps them, so a token is
- * never kept in two places.
- * @param {string} file
- * @returns {Promise<Record<string, Credentials>>}
- */
-async function adoptEarlierFile(file) {
-  const earlier = file.replace(/openad([\\/]credentials\.json)$/, "instapath$1");
-  if (earlier === file) return {};
-  let parsed;
-  try {
-    parsed = JSON.parse(await readFile(earlier, "utf8"));
-  } catch {
-    return {};
-  }
-  if (!parsed || typeof parsed !== "object") return {};
-  await writeAll(file, parsed);
-  await rm(earlier, { force: true });
-  return parsed;
 }
 
 /** @param {string} file @param {Record<string, Credentials>} all */

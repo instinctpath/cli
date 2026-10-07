@@ -4,8 +4,8 @@
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { parseArgs } from "node:util";
-import { agents, legacyTargets, occupant, targets } from "./agents.js";
-import { ApiError, createClient, DEFAULT_API, DEFAULT_WEB, LEGACY_APIS, NotConnected } from "./api.js";
+import { agents, occupant, targets } from "./agents.js";
+import { ApiError, createClient, DEFAULT_API, DEFAULT_WEB, NotConnected } from "./api.js";
 import { commands, UsageError } from "./commands.js";
 import { credentialsFile, forgetCredentials, loadCredentials, saveCredentials, setting } from "./config.js";
 import { clean, moment, palette } from "./output.js";
@@ -55,7 +55,7 @@ export function detectAgent(env) {
 /** @param {NodeJS.ProcessEnv} env */
 export function userAgent(env) {
   if (setting(env, "USER_AGENT")) return setting(env, "USER_AGENT");
-  const own = `openad-cli/${VERSION} (+https://github.com/openad-sh/cli)`;
+  const own = `ads-cli/${VERSION} (+https://github.com/openad-sh/cli)`;
   const agent = detectAgent(env);
   return agent ? `${agent} ${own}` : own;
 }
@@ -132,15 +132,8 @@ export async function main(argv, io = {}) {
 
   const credentials = async () => {
     const fromEnv = setting(env, "AGENT_TOKEN");
-    if (fromEnv) return { agent_token: fromEnv, agent_id: null, source: env.OPENAD_AGENT_TOKEN?.trim() ? "OPENAD_AGENT_TOKEN" : "INSTAPATH_AGENT_TOKEN" };
-    // A token saved before a move is still good on the new address.
-    let saved = await loadCredentials(file, api);
-    if (!saved && api === DEFAULT_API) {
-      for (const legacy of LEGACY_APIS) {
-        saved = await loadCredentials(file, legacy);
-        if (saved) break;
-      }
-    }
+    if (fromEnv) return { agent_token: fromEnv, agent_id: null, source: "ADS_AGENT_TOKEN" };
+    const saved = await loadCredentials(file, api);
     return saved ? { ...saved, source: tilde(file) } : null;
   };
 
@@ -209,11 +202,7 @@ export async function main(argv, io = {}) {
       return result;
     },
     async forget() {
-      let legacy = false;
-      if (api === DEFAULT_API) {
-        for (const old of LEGACY_APIS) legacy = (await forgetCredentials(file, old)) || legacy;
-      }
-      return (await forgetCredentials(file, api)) || legacy;
+      return forgetCredentials(file, api);
     },
     async client({ connect = false, required = false } = {}) {
       if (client) return client;
@@ -317,11 +306,11 @@ function report(ctx, stderr, error, command) {
   return 1;
 }
 
-/** Tell the user when an agent here still has an older copy of the skill, under its id now or an old one. @param {Context} ctx @param {string} current */
+/** Tell the user when an agent here still has an older copy of the skill. @param {Context} ctx @param {string} current */
 async function noteNewerSkill(ctx, current) {
   const found = agents({ home: ctx.home, env: ctx.env }).filter((agent) => agent.installed);
   const plan = targets(found, { global: true, cwd: ctx.cwd });
-  for (const { dir } of [...plan, ...legacyTargets(plan)]) {
+  for (const { dir } of plan) {
     const here = await occupant(dir).catch(() => null);
     if (here?.kind === "ours" && here.version && olderThan(here.version, current)) {
       ctx.hint(`A newer OpenAd skill is out (${clean(current)}). Update your agents with: openad add`);

@@ -3,7 +3,7 @@
 import { openAsBlob } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
 import { basename, extname, resolve } from "node:path";
-import { agents, chooseAgents, downloadSkill, legacyTargets, occupant, removeSkill, SKILL, targets, writeSkill } from "./agents.js";
+import { agents, chooseAgents, downloadSkill, occupant, removeSkill, SKILL, targets, writeSkill } from "./agents.js";
 import { aboutAuthor, clean, day, fit, moment, month, quoted, summary, trust, wrap } from "./output.js";
 import { inboxAddressesIn, inboxHandle, looksLikeInbox, uuidIn } from "./refs.js";
 
@@ -596,9 +596,7 @@ export const commands = {
       const forgot = await ctx.forget();
       if (ctx.json) return ctx.printJson({ forgotten: forgot });
       ctx.out(forgot ? "Forgot the token." : "There was no saved token.");
-      for (const name of ["OPENAD_AGENT_TOKEN", "INSTAPATH_AGENT_TOKEN"]) {
-        if (ctx.env[name]?.trim()) ctx.hint(`${name} is still set in this shell.`);
-      }
+      if (ctx.env.ADS_AGENT_TOKEN?.trim()) ctx.hint("ADS_AGENT_TOKEN is still set in this shell.");
     },
   },
 
@@ -638,8 +636,6 @@ export const commands = {
       }
       if (ctx.interactive) await ctx.confirm("Add it?", true);
       for (const target of writable) await writeSkill(target.dir, skill.files);
-      // A copy saved under the skill's old id would leave the agent with two.
-      for (const old of legacyTargets(writable)) if ((await occupant(old.dir)).kind === "ours") await removeSkill(old.dir);
       if (ctx.json) return ctx.printJson({ version: skill.version, added: writable });
       ctx.out(c.green("Added."));
       ctx.hint('Ask your agent something like: "Use OpenAd to find a designer for my bakery\'s logo."');
@@ -655,7 +651,7 @@ export const commands = {
       const all = agents({ home: ctx.home, env: ctx.env });
       const chosen = opts.agent?.length ? chooseAgents(all, opts.agent) : all;
       const current = targets(chosen, { global: !opts.project, cwd: ctx.cwd });
-      const plan = [...current, ...legacyTargets(current)];
+      const plan = current;
       /** @type {typeof plan} */
       const found = [];
       for (const target of plan) if ((await occupant(target.dir)).kind === "ours") found.push(target);
