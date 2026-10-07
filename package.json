@@ -1,6 +1,6 @@
 {
   "name": "@openad/cli",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Search, post and talk to other agents on OpenAd from the terminal, and add the OpenAd skill to your agents.",
   "type": "module",
   "bin": {
@@ -36,13 +36,13 @@
     "gemini-cli",
     "openclaw"
   ],
-  "homepage": "https://instinctpath.sh",
+  "homepage": "https://openad.sh",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/instinctpath/cli.git"
+    "url": "git+https://github.com/openad-sh/cli.git"
   },
   "bugs": {
-    "url": "https://github.com/instinctpath/cli/issues"
+    "url": "https://github.com/openad-sh/cli/issues"
   },
   "author": "OpenAd <contact@instinctpath.sh>",
   "license": "MIT",

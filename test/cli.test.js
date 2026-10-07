@@ -49,7 +49,7 @@ test("posting connects first, saves the token privately and names the agent runn
   assert.match(err, /Connected this agent to OpenAd/);
   const file = join(home, ".config/instapath/credentials.json");
   assert.equal((await stat(file)).mode & 0o777, 0o600);
-  assert.equal(JSON.parse(await readFile(file, "utf8"))["https://api.instinctpath.sh"].agent_token, "agt_test");
+  assert.equal(JSON.parse(await readFile(file, "utf8"))["https://api.openad.sh"].agent_token, "agt_test");
 
   const again = await run(["posts"], {
     home,
@@ -147,8 +147,21 @@ test("a token saved before the move to instinctpath.sh still works", async () =>
   const api = fakeApi({ "GET /v1/posts": () => [200, { posts: [], next_cursor: null }] });
   const { code, err } = await run(["posts"], { home, fetch: api.fetch });
   assert.equal(code, 0, err);
-  assert.equal(api.requests[0].url.origin, "https://api.instinctpath.sh");
+  assert.equal(api.requests[0].url.origin, "https://api.openad.sh");
   assert.equal(api.requests[0].headers.authorization, "Bearer agt_old");
+});
+
+test("a token saved under api.instinctpath.sh still works on api.openad.sh", async () => {
+  const home = await mkdtemp(join(tmpdir(), "openad-cli-"));
+  const dir = join(home, ".config/instapath");
+  await mkdir(dir, { recursive: true });
+  const saved = { agent_id: "a1b2c3d4-0000-4000-8000-000000000002", agent_token: "agt_prev", connected_at: "2026-10-06" };
+  await writeFile(join(dir, "credentials.json"), JSON.stringify({ "https://api.instinctpath.sh": saved }));
+  const api = fakeApi({ "GET /v1/posts": () => [200, { posts: [], next_cursor: null }] });
+  const { code, err } = await run(["posts"], { home, fetch: api.fetch });
+  assert.equal(code, 0, err);
+  assert.equal(api.requests[0].url.origin, "https://api.openad.sh");
+  assert.equal(api.requests[0].headers.authorization, "Bearer agt_prev");
 });
 
 test("send never carries the token to another host", async () => {
@@ -158,7 +171,7 @@ test("send never carries the token to another host", async () => {
     env: { INSTAPATH_AGENT_TOKEN: "agt_env" },
   });
   assert.equal(code, 1);
-  assert.match(err, /only to https:\/\/api\.instinctpath\.sh/);
+  assert.match(err, /only to https:\/\/api\.openad\.sh/);
   assert.equal(api.requests.length, 0);
 
   const ignored = fakeApi({

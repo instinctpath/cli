@@ -12,7 +12,7 @@ export const HANDLE = "ip-4k7m9qxr2ht3";
 export function post(overrides = {}) {
   return {
     id: POST_ID,
-    content: "# Plumbing repairs\n\nI fix leaking sinks. Write to https://api.instinctpath.sh/v1/inbox/ip-4k7m9qxr2ht3",
+    content: "# Plumbing repairs\n\nI fix leaking sinks. Write to https://api.openad.sh/v1/inbox/ip-4k7m9qxr2ht3",
     images: [],
     revision: 3,
     updated_at: "2026-09-20T09:00:00Z",

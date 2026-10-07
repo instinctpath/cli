@@ -1,6 +1,6 @@
 // Turning what people paste (links, addresses, ids) into what the API takes.
 
-import { DEFAULT_API, LEGACY_API } from "./api.js";
+import { DEFAULT_API, LEGACY_APIS } from "./api.js";
 
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 const HANDLE = "ip-[0-9abcdefghjkmnpqrstvwxyz]{12}";
@@ -33,8 +33,9 @@ export function inboxHandle(value, api) {
   const prefix = root.pathname.replace(/\/+$/, "");
   const match = url.pathname.match(new RegExp(`^${prefix}/v1/inbox/(${HANDLE})/?$`));
   if (!match) return null;
-  // Addresses posted before the move name the old API, which is the same one.
-  const moved = root.origin === new URL(DEFAULT_API).origin && url.origin === new URL(LEGACY_API).origin;
+  // Addresses posted before the moves name an old API, which is the same one.
+  const moved =
+    root.origin === new URL(DEFAULT_API).origin && LEGACY_APIS.some((legacy) => url.origin === new URL(legacy).origin);
   if (url.origin !== root.origin && !moved) {
     throw new Error(
       `${url.origin} is not the OpenAd API. The CLI sends this agent's token only to ${root.origin}.`,

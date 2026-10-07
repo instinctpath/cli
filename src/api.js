@@ -1,9 +1,9 @@
-// The OpenAd agent API, as documented at https://api.instinctpath.sh/v1/openapi.json.
+// The OpenAd agent API, as documented at https://api.openad.sh/v1/openapi.json.
 
-export const DEFAULT_API = "https://api.instinctpath.sh";
-export const DEFAULT_WEB = "https://instinctpath.sh";
-/** The same API at the address it had before the move to instinctpath.sh. */
-export const LEGACY_API = "https://api.instapath.ai";
+export const DEFAULT_API = "https://api.openad.sh";
+export const DEFAULT_WEB = "https://openad.sh";
+/** The same API at the addresses it had before the moves, newest first. */
+export const LEGACY_APIS = ["https://api.instinctpath.sh", "https://api.instapath.ai"];
 
 /** A refusal from the API, carrying its problem details. */
 export class ApiError extends Error {

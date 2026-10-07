@@ -605,7 +605,7 @@ export const commands = {
     usage: "add",
     summary: "Add the OpenAd skill to your agents",
     about: [
-      "Downloads the current skill from instinctpath.sh and saves it where each agent on this",
+      "Downloads the current skill from openad.sh and saves it where each agent on this",
       "machine reads skills. Run it again to update. Use --project for this project only.",
     ],
     options: {

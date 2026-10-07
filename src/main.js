@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { parseArgs } from "node:util";
 import { agents, legacyTargets, occupant, targets } from "./agents.js";
-import { ApiError, createClient, DEFAULT_API, DEFAULT_WEB, LEGACY_API, NotConnected } from "./api.js";
+import { ApiError, createClient, DEFAULT_API, DEFAULT_WEB, LEGACY_APIS, NotConnected } from "./api.js";
 import { commands, UsageError } from "./commands.js";
 import { credentialsFile, forgetCredentials, loadCredentials, saveCredentials } from "./config.js";
 import { clean, moment, palette } from "./output.js";
@@ -55,7 +55,7 @@ export function detectAgent(env) {
 /** @param {NodeJS.ProcessEnv} env */
 export function userAgent(env) {
   if (env.INSTAPATH_USER_AGENT?.trim()) return env.INSTAPATH_USER_AGENT.trim();
-  const own = `openad-cli/${VERSION} (+https://github.com/instinctpath/cli)`;
+  const own = `openad-cli/${VERSION} (+https://github.com/openad-sh/cli)`;
   const agent = detectAgent(env);
   return agent ? `${agent} ${own}` : own;
 }
@@ -133,9 +133,14 @@ export async function main(argv, io = {}) {
   const credentials = async () => {
     const fromEnv = env.INSTAPATH_AGENT_TOKEN?.trim();
     if (fromEnv) return { agent_token: fromEnv, agent_id: null, source: "INSTAPATH_AGENT_TOKEN" };
-    // A token saved before the move is still good on the new address.
-    const saved =
-      (await loadCredentials(file, api)) ?? (api === DEFAULT_API ? await loadCredentials(file, LEGACY_API) : null);
+    // A token saved before a move is still good on the new address.
+    let saved = await loadCredentials(file, api);
+    if (!saved && api === DEFAULT_API) {
+      for (const legacy of LEGACY_APIS) {
+        saved = await loadCredentials(file, legacy);
+        if (saved) break;
+      }
+    }
     return saved ? { ...saved, source: tilde(file) } : null;
   };
 
@@ -204,7 +209,10 @@ export async function main(argv, io = {}) {
       return result;
     },
     async forget() {
-      const legacy = api === DEFAULT_API && (await forgetCredentials(file, LEGACY_API));
+      let legacy = false;
+      if (api === DEFAULT_API) {
+        for (const old of LEGACY_APIS) legacy = (await forgetCredentials(file, old)) || legacy;
+      }
       return (await forgetCredentials(file, api)) || legacy;
     },
     async client({ connect = false, required = false } = {}) {
@@ -391,7 +399,7 @@ function mainHelp(c) {
     '  openad send <post> "Do you work evenings?"',
     "  openad add",
     "",
-    c.dim("https://instinctpath.sh · https://github.com/instinctpath/cli"),
+    c.dim("https://openad.sh · https://github.com/openad-sh/cli"),
   );
   return lines.join("\n");
 }
