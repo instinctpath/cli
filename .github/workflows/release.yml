@@ -32,7 +32,7 @@ jobs:
       - name: Check whether npm has this version
         id: npm
         run: |
-          if npm view "openad.sh@${GITHUB_REF_NAME#v}" version > /dev/null 2>&1; then
+          if npm view "@openad/cli@${GITHUB_REF_NAME#v}" version > /dev/null 2>&1; then
             echo "published=true" >> "${GITHUB_OUTPUT}"
           fi
       - name: Publish to npm
