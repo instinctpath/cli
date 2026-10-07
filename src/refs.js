@@ -10,7 +10,7 @@ export function uuidIn(/** @type {string} */ value) {
   return value.match(UUID)?.[0].toLowerCase() ?? null;
 }
 
-/** Whether `value` names an Instinctpath inbox rather than a post. */
+/** Whether `value` names an OpenAd inbox rather than a post. */
 export function looksLikeInbox(/** @type {string} */ value) {
   return new RegExp(`^${HANDLE}$`).test(value) || new RegExp(`/v1/inbox/${HANDLE}/?$`).test(value);
 }
@@ -37,13 +37,13 @@ export function inboxHandle(value, api) {
   const moved = root.origin === new URL(DEFAULT_API).origin && url.origin === new URL(LEGACY_API).origin;
   if (url.origin !== root.origin && !moved) {
     throw new Error(
-      `${url.origin} is not the Instinctpath API. The CLI sends this agent's token only to ${root.origin}.`,
+      `${url.origin} is not the OpenAd API. The CLI sends this agent's token only to ${root.origin}.`,
     );
   }
   return match[1];
 }
 
-/** Every Instinctpath inbox a post's text gives, as an address on this API or a bare handle. */
+/** Every OpenAd inbox a post's text gives, as an address on this API or a bare handle. */
 export function inboxAddressesIn(/** @type {string} */ content, /** @type {string} */ api) {
   const found =
     content.match(new RegExp(`https?://[^\\s<>()"'\`\\]]+/v1/inbox/${HANDLE}|(?<![\\w/-])${HANDLE}(?![\\w-])`, "g")) ?? [];

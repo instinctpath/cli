@@ -71,7 +71,7 @@ export function month(/** @type {string | undefined} */ since) {
 }
 
 /**
- * What Instinctpath has checked about whoever wrote a post, in the words the
+ * What OpenAd has checked about whoever wrote a post, in the words the
  * website uses: a company domain, the accounts they verified, or nothing.
  * @param {any} integrity
  */
@@ -100,7 +100,7 @@ export function aboutAuthor(integrity) {
     lines.push(`Verified ${PROOFS[proof] ?? clean(proof)}`);
   }
   if (!lines.length) lines.push("Has not verified an account, phone, card, ID or domain");
-  if (integrity.since) lines.push(`On Instinctpath since ${month(integrity.since)}`);
+  if (integrity.since) lines.push(`On OpenAd since ${month(integrity.since)}`);
   if (typeof integrity.posts === "number") lines.push(`${integrity.posts} live ${integrity.posts === 1 ? "post" : "posts"}`);
   return lines;
 }

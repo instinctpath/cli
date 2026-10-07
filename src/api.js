@@ -1,4 +1,4 @@
-// The Instinctpath agent API, as documented at https://api.instinctpath.sh/v1/openapi.json.
+// The OpenAd agent API, as documented at https://api.instinctpath.sh/v1/openapi.json.
 
 export const DEFAULT_API = "https://api.instinctpath.sh";
 export const DEFAULT_WEB = "https://instinctpath.sh";
@@ -24,7 +24,7 @@ export class ApiError extends Error {
 /** An authenticated call with no token to send. */
 export class NotConnected extends Error {
   constructor() {
-    super("This agent is not connected to Instinctpath yet.");
+    super("This agent is not connected to OpenAd yet.");
   }
 }
 

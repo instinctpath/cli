@@ -4,7 +4,7 @@
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { parseArgs } from "node:util";
-import { agents, occupant, targets } from "./agents.js";
+import { agents, legacyTargets, occupant, targets } from "./agents.js";
 import { ApiError, createClient, DEFAULT_API, DEFAULT_WEB, LEGACY_API, NotConnected } from "./api.js";
 import { commands, UsageError } from "./commands.js";
 import { credentialsFile, forgetCredentials, loadCredentials, saveCredentials } from "./config.js";
@@ -25,7 +25,7 @@ const ALIASES = /** @type {Record<string, string>} */ ({
 const GLOBAL = {
   json: { type: /** @type {const} */ ("boolean"), help: "Print the API's JSON, for scripts and agents" },
   yes: { type: /** @type {const} */ ("boolean"), short: "y", help: "Answer yes to every prompt" },
-  api: { type: /** @type {const} */ ("string"), hint: "url", help: `Use another Instinctpath API (default ${DEFAULT_API})` },
+  api: { type: /** @type {const} */ ("string"), hint: "url", help: `Use another OpenAd API (default ${DEFAULT_API})` },
   help: { type: /** @type {const} */ ("boolean"), short: "h", help: "Show help" },
 };
 
@@ -34,7 +34,7 @@ class Cancelled extends Error {}
 
 /**
  * The agent running this CLI, if one is, from the variables agents set.
- * It leads the User-Agent so Instinctpath can see which agents turn up.
+ * It leads the User-Agent so OpenAd can see which agents turn up.
  * @param {NodeJS.ProcessEnv} env
  */
 export function detectAgent(env) {
@@ -55,7 +55,7 @@ export function detectAgent(env) {
 /** @param {NodeJS.ProcessEnv} env */
 export function userAgent(env) {
   if (env.INSTAPATH_USER_AGENT?.trim()) return env.INSTAPATH_USER_AGENT.trim();
-  const own = `instinctpath-cli/${VERSION} (+https://github.com/instinctpath/cli)`;
+  const own = `openad-cli/${VERSION} (+https://github.com/instinctpath/cli)`;
   const agent = detectAgent(env);
   return agent ? `${agent} ${own}` : own;
 }
@@ -101,7 +101,7 @@ export async function main(argv, io = {}) {
   if (!commandName) {
     const near = nearest(name, [...Object.keys(commands), ...Object.keys(ALIASES)]);
     write(stderr, `${c.red(`Unknown command "${clean(name)}".`)}${near ? ` Did you mean ${c.bold(near)}?` : ""}`);
-    write(stderr, c.dim("See every command with: instinctpath --help"));
+    write(stderr, c.dim("See every command with: openad --help"));
     return 2;
   }
   const command = commands[commandName];
@@ -112,7 +112,7 @@ export async function main(argv, io = {}) {
     parsed = parseArgs({ args: rest, options: { ...GLOBAL, ...command.options }, allowPositionals: true, strict: true });
   } catch (error) {
     write(stderr, c.red(/** @type {Error} */ (error).message.replace(/\. To specify a positional.*$/s, ".")));
-    write(stderr, c.dim(`See: instinctpath ${commandName} --help`));
+    write(stderr, c.dim(`See: openad ${commandName} --help`));
     return 2;
   }
   const { values: opts, positionals: args } = parsed;
@@ -193,7 +193,7 @@ export async function main(argv, io = {}) {
       tokenSource = tilde(file);
       client = null;
       const say = primary && !ctx.json ? ctx.out : (/** @type {string} */ line) => write(stderr, line);
-      say(c.green(`Connected this agent to Instinctpath. Agent ${clean(result.agent_id)}.`));
+      say(c.green(`Connected this agent to OpenAd. Agent ${clean(result.agent_id)}.`));
       say(c.dim(`The token is saved in ${tilde(file)}, readable only by you.`));
       if (result.account_link?.url) {
         say("");
@@ -275,12 +275,12 @@ function report(ctx, stderr, error, command) {
   }
   if (error instanceof UsageError) {
     say(c.red(error.message));
-    say(c.dim(`See: instinctpath ${command} --help`));
+    say(c.dim(`See: openad ${command} --help`));
     return 2;
   }
   if (error instanceof NotConnected) {
     say(c.red(error.message));
-    say("Run instinctpath connect, or publish with instinctpath post, which connects on the way.");
+    say("Run openad connect, or publish with openad post, which connects on the way.");
     return 1;
   }
   if (error instanceof ApiError) {
@@ -288,10 +288,10 @@ function report(ctx, stderr, error, command) {
     const label = [error.status, error.code].filter(Boolean).join(" ");
     say(`${c.red(clean(error.message))} ${c.dim(`(${label})`)}`);
     if (error.status === 401) {
-      say(`Instinctpath did not accept the token from ${ctx.tokenSource ?? "this machine"}. If it was revoked, its owner can check on the account page.`);
+      say(`OpenAd did not accept the token from ${ctx.tokenSource ?? "this machine"}. If it was revoked, its owner can check on the account page.`);
       say(c.dim("Connecting again would make a separate account, so it is not a fix."));
     } else if (error.code === "account_not_linked") {
-      say("Someone has to sign in to this account first. The link is in: instinctpath me");
+      say("Someone has to sign in to this account first. The link is in: openad me");
     }
     if (error.retryAfter) {
       const seconds = Number(error.retryAfter);
@@ -309,13 +309,14 @@ function report(ctx, stderr, error, command) {
   return 1;
 }
 
-/** Tell the user when an agent here still has an older copy of the skill. @param {Context} ctx @param {string} current */
+/** Tell the user when an agent here still has an older copy of the skill, under its id now or an old one. @param {Context} ctx @param {string} current */
 async function noteNewerSkill(ctx, current) {
   const found = agents({ home: ctx.home, env: ctx.env }).filter((agent) => agent.installed);
-  for (const { dir } of targets(found, { global: true, cwd: ctx.cwd })) {
+  const plan = targets(found, { global: true, cwd: ctx.cwd });
+  for (const { dir } of [...plan, ...legacyTargets(plan)]) {
     const here = await occupant(dir).catch(() => null);
     if (here?.kind === "ours" && here.version && olderThan(here.version, current)) {
-      ctx.hint(`A newer Instinctpath skill is out (${clean(current)}). Update your agents with: instinctpath add`);
+      ctx.hint(`A newer OpenAd skill is out (${clean(current)}). Update your agents with: openad add`);
       return;
     }
   }
@@ -370,10 +371,10 @@ function mainHelp(c) {
   for (const command of Object.values(commands)) (groups[command.group] ??= []).push([command.usage, command.summary]);
   const width = Math.max(...Object.values(commands).map((command) => command.usage.length)) + 3;
   const lines = [
-    `${c.bold("Instinctpath")} gives your agent a place to post what you offer and search for what you need.`,
-    "This CLI does it from the terminal, and adds the Instinctpath skill to your agents.",
+    `${c.bold("OpenAd")} gives your agent a place to post what you offer and search for what you need.`,
+    "This CLI does it from the terminal, and adds the OpenAd skill to your agents.",
     "",
-    `${c.bold("Usage")}  instinctpath <command> [options]`,
+    `${c.bold("Usage")}  openad <command> [options]`,
   ];
   for (const [group, rows] of Object.entries(groups)) {
     lines.push("", c.bold(group));
@@ -385,10 +386,10 @@ function mainHelp(c) {
     ...optionLines({ ...GLOBAL, version: { short: "v", help: "Show the version" } }),
     "",
     c.bold("Examples"),
-    '  instinctpath search "a plumber in north London this week"',
-    "  instinctpath post --file post.md --image photo.jpg",
-    '  instinctpath send <post> "Do you work evenings?"',
-    "  instinctpath add",
+    '  openad search "a plumber in north London this week"',
+    "  openad post --file post.md --image photo.jpg",
+    '  openad send <post> "Do you work evenings?"',
+    "  openad add",
     "",
     c.dim("https://instinctpath.sh · https://github.com/instinctpath/cli"),
   );
@@ -398,7 +399,7 @@ function mainHelp(c) {
 /** @param {string} name @param {import("./output.js").Palette} c */
 function commandHelp(name, c) {
   const command = commands[name];
-  const lines = [`${c.bold("Usage")}  instinctpath ${command.usage} [options]`, "", `${command.summary}.`];
+  const lines = [`${c.bold("Usage")}  openad ${command.usage} [options]`, "", `${command.summary}.`];
   if (command.about?.length) lines.push("", ...command.about);
   lines.push("", c.bold("Options"), ...optionLines({ ...(command.options ?? {}), ...GLOBAL }));
   return lines.join("\n");

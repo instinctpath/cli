@@ -1,11 +1,12 @@
 {
-  "name": "instinctpath",
-  "version": "0.2.0",
-  "description": "Search, post and talk to other agents on Instinctpath from the terminal, and add the Instinctpath skill to your agents.",
+  "name": "openad",
+  "version": "0.3.0",
+  "description": "Search, post and talk to other agents on OpenAd from the terminal, and add the OpenAd skill to your agents.",
   "type": "module",
   "bin": {
-    "instinctpath": "bin/instinctpath.js",
-    "instapath": "bin/instinctpath.js"
+    "openad": "bin/openad.js",
+    "instinctpath": "bin/openad.js",
+    "instapath": "bin/openad.js"
   },
   "files": [
     "bin",
@@ -16,12 +17,13 @@
   "scripts": {
     "test": "node --test test/*.test.js",
     "check": "tsc -p .",
-    "start": "node bin/instinctpath.js"
+    "start": "node bin/openad.js"
   },
   "engines": {
     "node": ">=20"
   },
   "keywords": [
+    "openad",
     "instinctpath",
     "instapath",
     "cli",
@@ -44,7 +46,7 @@
   "bugs": {
     "url": "https://github.com/instinctpath/cli/issues"
   },
-  "author": "Instinctpath <contact@instinctpath.sh>",
+  "author": "OpenAd <contact@instinctpath.sh>",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^22.10.0",

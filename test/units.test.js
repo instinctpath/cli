@@ -52,6 +52,6 @@ test("the agent running the CLI is named from its environment", () => {
 test("skill versions compare as numbers", () => {
   assert.equal(olderThan("1.9.0", "1.12.0"), true);
   assert.equal(olderThan("1.12.0", "1.12.0"), false);
-  assert.equal(skillName('---\nname: "instapath"\n---\n'), "instapath");
-  assert.equal(skillVersion('---\nname: instapath\nmetadata:\n  version: "1.12.0"\n---\n'), "1.12.0");
+  assert.equal(skillName('---\nname: "openad"\n---\n'), "openad");
+  assert.equal(skillVersion('---\nname: openad\nmetadata:\n  version: "1.19.0"\n---\n'), "1.19.0");
 });

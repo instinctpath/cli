@@ -1,4 +1,4 @@
-// Where each agent reads skills from, and adding or removing the Instinctpath
+// Where each agent reads skills from, and adding or removing the OpenAd
 // skill there. The folders follow the open skills ecosystem, so a copy added
 // here sits exactly where `npx skills add` would put it.
 
@@ -6,9 +6,9 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
-export const SKILL = "instinctpath";
-/** The skill's id before the rename. Its folders count as ours: add replaces them, remove clears them. */
-export const LEGACY_SKILL = "instapath";
+export const SKILL = "openad";
+/** The skill's ids before the renames, newest first. Their folders count as ours: add replaces them, remove clears them. */
+export const LEGACY_SKILLS = ["instinctpath", "instapath"];
 
 /**
  * @typedef {{ id: string, name: string, project: string, global: string, installed: boolean }} Agent
@@ -85,9 +85,9 @@ export function targets(chosen, { global, cwd }) {
   return [...byDir].map(([dir, names]) => ({ dir, names }));
 }
 
-/** Where the skill sat under its old id, next to each of `plan`'s folders. @param {{ dir: string, names: string[] }[]} plan */
+/** Where the skill sat under each old id, next to each of `plan`'s folders. @param {{ dir: string, names: string[] }[]} plan */
 export function legacyTargets(plan) {
-  return plan.map(({ dir, names }) => ({ dir: join(dirname(dir), LEGACY_SKILL), names }));
+  return plan.flatMap(({ dir, names }) => LEGACY_SKILLS.map((id) => ({ dir: join(dirname(dir), id), names })));
 }
 
 /** The `name:` in a SKILL.md's frontmatter. @param {string} text */
@@ -111,7 +111,7 @@ export async function occupant(dir) {
     return existsSync(dir) ? { kind: /** @type {const} */ ("other"), version: null } : { kind: /** @type {const} */ ("none"), version: null };
   }
   const name = skillName(text);
-  return name === SKILL || name === LEGACY_SKILL
+  return name === SKILL || (name !== null && LEGACY_SKILLS.includes(name))
     ? { kind: /** @type {const} */ ("ours"), version: skillVersion(text) }
     : { kind: /** @type {const} */ ("other"), version: null };
 }
@@ -128,7 +128,7 @@ export async function removeSkill(dir) {
 }
 
 /**
- * The skill as Instinctpath publishes it now.
+ * The skill as OpenAd publishes it now.
  * @param {string} web
  * @param {{ fetch: typeof fetch, userAgent: string }} io
  */
@@ -145,7 +145,7 @@ export async function downloadSkill(web, { fetch: send, userAgent }) {
     files[name] = await response.text();
   }
   if (skillName(files["SKILL.md"]) !== SKILL) {
-    throw new Error(`${root}/skill.md is not the Instinctpath skill. Nothing was written.`);
+    throw new Error(`${root}/skill.md is not the OpenAd skill. Nothing was written.`);
   }
   return { files, version: skillVersion(files["SKILL.md"]) };
 }

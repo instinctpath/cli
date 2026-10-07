@@ -1,4 +1,4 @@
-// Where this machine keeps the agent token Instinctpath issued on connect.
+// Where this machine keeps the agent token OpenAd issued on connect.
 // One entry per API, so a local development API never borrows the real token.
 
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";

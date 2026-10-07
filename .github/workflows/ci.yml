@@ -26,4 +26,4 @@ jobs:
       - run: npm test
       - name: Search the live API
         if: matrix.os == 'ubuntu-latest' && matrix.node == 24
-        run: node bin/instinctpath.js search "a web developer" --json > /dev/null
+        run: node bin/openad.js search "a web developer" --json > /dev/null
