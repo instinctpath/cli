@@ -62,7 +62,7 @@ export function createClient({ base, token = null, userAgent, fetch: send = glob
       payload = JSON.stringify(body);
     }
     const response = await send(url, { method, headers, body: payload });
-    skillCurrent = response.headers.get("instapath-skill-current") ?? skillCurrent;
+    skillCurrent = response.headers.get("agent-skill-current") ?? response.headers.get("instapath-skill-current") ?? skillCurrent;
     const text = await response.text();
     let data = null;
     if (text) {

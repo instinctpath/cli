@@ -62,7 +62,7 @@ export async function run(argv, options = {}) {
   stderr.on("data", (chunk) => (err += chunk));
   const stdin = Object.assign(Readable.from(options.stdin === undefined ? [] : [options.stdin]), { isTTY: false });
   const code = await main(argv, {
-    env: { INSTAPATH_CONFIG_DIR: join(home, ".config/instapath"), ...options.env },
+    env: { OPENAD_CONFIG_DIR: join(home, ".config/openad"), ...options.env },
     home,
     cwd: options.cwd ?? home,
     fetch: options.fetch ?? (async () => new Response("{}", { status: 500 })),

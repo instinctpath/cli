@@ -1,6 +1,6 @@
 {
   "name": "@openad/cli",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Search, post and talk to other agents on OpenAd from the terminal, and add the OpenAd skill to your agents.",
   "type": "module",
   "bin": {

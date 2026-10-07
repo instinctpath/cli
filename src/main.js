@@ -7,7 +7,7 @@ import { parseArgs } from "node:util";
 import { agents, legacyTargets, occupant, targets } from "./agents.js";
 import { ApiError, createClient, DEFAULT_API, DEFAULT_WEB, LEGACY_APIS, NotConnected } from "./api.js";
 import { commands, UsageError } from "./commands.js";
-import { credentialsFile, forgetCredentials, loadCredentials, saveCredentials } from "./config.js";
+import { credentialsFile, forgetCredentials, loadCredentials, saveCredentials, setting } from "./config.js";
 import { clean, moment, palette } from "./output.js";
 
 export const VERSION = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
@@ -54,7 +54,7 @@ export function detectAgent(env) {
 
 /** @param {NodeJS.ProcessEnv} env */
 export function userAgent(env) {
-  if (env.INSTAPATH_USER_AGENT?.trim()) return env.INSTAPATH_USER_AGENT.trim();
+  if (setting(env, "USER_AGENT")) return setting(env, "USER_AGENT");
   const own = `openad-cli/${VERSION} (+https://github.com/openad-sh/cli)`;
   const agent = detectAgent(env);
   return agent ? `${agent} ${own}` : own;
@@ -119,7 +119,7 @@ export async function main(argv, io = {}) {
   if (opts.help) return write(stdout, commandHelp(commandName, c)), 0;
 
   const home = io.home ?? homedir();
-  const api = (opts.api || env.INSTAPATH_API_URL?.trim() || DEFAULT_API).replace(/\/+$/, "");
+  const api = (opts.api || setting(env, "API_URL") || DEFAULT_API).replace(/\/+$/, "");
   const file = credentialsFile(env, home);
   const send = io.fetch ?? globalThis.fetch;
   const agentName = userAgent(env);
@@ -131,8 +131,8 @@ export async function main(argv, io = {}) {
   const tilde = (/** @type {string} */ path) => (path === home || path.startsWith(`${home}/`) ? `~${path.slice(home.length)}` : path);
 
   const credentials = async () => {
-    const fromEnv = env.INSTAPATH_AGENT_TOKEN?.trim();
-    if (fromEnv) return { agent_token: fromEnv, agent_id: null, source: "INSTAPATH_AGENT_TOKEN" };
+    const fromEnv = setting(env, "AGENT_TOKEN");
+    if (fromEnv) return { agent_token: fromEnv, agent_id: null, source: env.OPENAD_AGENT_TOKEN?.trim() ? "OPENAD_AGENT_TOKEN" : "INSTAPATH_AGENT_TOKEN" };
     // A token saved before a move is still good on the new address.
     let saved = await loadCredentials(file, api);
     if (!saved && api === DEFAULT_API) {
@@ -151,8 +151,8 @@ export async function main(argv, io = {}) {
     home,
     fetch: send,
     api,
-    web: env.INSTAPATH_WEB_URL?.trim().replace(/\/+$/, "") || (api === DEFAULT_API ? DEFAULT_WEB : null),
-    skillWeb: env.INSTAPATH_WEB_URL?.trim().replace(/\/+$/, "") || DEFAULT_WEB,
+    web: setting(env, "WEB_URL").replace(/\/+$/, "") || (api === DEFAULT_API ? DEFAULT_WEB : null),
+    skillWeb: setting(env, "WEB_URL").replace(/\/+$/, "") || DEFAULT_WEB,
     json: !!opts.json,
     interactive,
     stdinIsTTY: !!stdin.isTTY,
@@ -313,7 +313,7 @@ function report(ctx, stderr, error, command) {
     return 1;
   }
   say(c.red(failure?.message ?? String(error)));
-  if (ctx.env.INSTAPATH_DEBUG && failure?.stack) say(c.dim(failure.stack));
+  if (setting(ctx.env, "DEBUG") && failure?.stack) say(c.dim(failure.stack));
   return 1;
 }
 

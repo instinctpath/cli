@@ -596,7 +596,9 @@ export const commands = {
       const forgot = await ctx.forget();
       if (ctx.json) return ctx.printJson({ forgotten: forgot });
       ctx.out(forgot ? "Forgot the token." : "There was no saved token.");
-      if (ctx.env.INSTAPATH_AGENT_TOKEN) ctx.hint("INSTAPATH_AGENT_TOKEN is still set in this shell.");
+      for (const name of ["OPENAD_AGENT_TOKEN", "INSTAPATH_AGENT_TOKEN"]) {
+        if (ctx.env[name]?.trim()) ctx.hint(`${name} is still set in this shell.`);
+      }
     },
   },
 
