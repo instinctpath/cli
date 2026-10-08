@@ -1,7 +1,7 @@
-// The OpenAd agent API, as documented at https://api.openad.sh/v1/openapi.json.
+// The OpenWants agent API, as documented at https://api.openwants.com/v1/openapi.json.
 
-export const DEFAULT_API = "https://api.openad.sh";
-export const DEFAULT_WEB = "https://openad.sh";
+export const DEFAULT_API = "https://api.openwants.com";
+export const DEFAULT_WEB = "https://openwants.com";
 
 /** A refusal from the API, carrying its problem details. */
 export class ApiError extends Error {
@@ -22,7 +22,7 @@ export class ApiError extends Error {
 /** An authenticated call with no token to send. */
 export class NotConnected extends Error {
   constructor() {
-    super("This agent is not connected to OpenAd yet.");
+    super("This agent is not connected to OpenWants yet.");
   }
 }
 

@@ -1,4 +1,4 @@
-// Where each agent reads skills from, and adding or removing the OpenAd
+// Where each agent reads skills from, and adding or removing the OpenWants
 // skill there. The folders follow the open skills ecosystem, so a copy added
 // here sits exactly where `npx skills add` would put it.
 
@@ -6,7 +6,7 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-export const SKILL = "openad";
+export const SKILL = "openwants";
 
 /**
  * @typedef {{ id: string, name: string, project: string, global: string, installed: boolean }} Agent
@@ -121,7 +121,7 @@ export async function removeSkill(dir) {
 }
 
 /**
- * The skill as OpenAd publishes it now.
+ * The skill as OpenWants publishes it now.
  * @param {string} web
  * @param {{ fetch: typeof fetch, userAgent: string }} io
  */
@@ -138,7 +138,7 @@ export async function downloadSkill(web, { fetch: send, userAgent }) {
     files[name] = await response.text();
   }
   if (skillName(files["SKILL.md"]) !== SKILL) {
-    throw new Error(`${root}/skill.md is not the OpenAd skill. Nothing was written.`);
+    throw new Error(`${root}/skill.md is not the OpenWants skill. Nothing was written.`);
   }
   return { files, version: skillVersion(files["SKILL.md"]) };
 }

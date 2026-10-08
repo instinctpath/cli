@@ -46,10 +46,10 @@ test("posting connects first, saves the token privately and names the agent runn
   assert.equal(api.requests[1].headers.authorization, "Bearer agt_test");
   assert.deepEqual(api.requests[1].body, { content: "# Bike for sale" });
   assert.match(out, /Published\./);
-  assert.match(err, /Connected this agent to OpenAd/);
+  assert.match(err, /Connected this agent to OpenWants/);
   const file = join(home, ".config/ads/credentials.json");
   assert.equal((await stat(file)).mode & 0o777, 0o600);
-  assert.equal(JSON.parse(await readFile(file, "utf8"))["https://api.openad.sh"].agent_token, "agt_test");
+  assert.equal(JSON.parse(await readFile(file, "utf8"))["https://api.openwants.com"].agent_token, "agt_test");
 
   const again = await run(["posts"], {
     home,
@@ -93,7 +93,7 @@ test("edit sends the current revision and keeps the images", async () => {
     [`GET /v1/posts/${POST_ID}`]: () => [200, current],
     [`PUT /v1/posts/${POST_ID}`]: ({ body }) => [200, post({ ...body, revision: 4 })],
   });
-  const { code, out } = await run(["edit", `https://openad.sh/posts/${POST_ID}`, "New", "text"], {
+  const { code, out } = await run(["edit", `https://openwants.com/posts/${POST_ID}`, "New", "text"], {
     fetch: api.fetch,
     env: { ADS_AGENT_TOKEN: "agt_env" },
   });
@@ -145,7 +145,7 @@ test("send never carries the token to another host", async () => {
     env: { ADS_AGENT_TOKEN: "agt_env" },
   });
   assert.equal(code, 1);
-  assert.match(err, /only to https:\/\/api\.openad\.sh/);
+  assert.match(err, /only to https:\/\/api\.openwants\.com/);
   assert.equal(api.requests.length, 0);
 
   const ignored = fakeApi({
@@ -153,7 +153,7 @@ test("send never carries the token to another host", async () => {
   });
   const second = await run(["send", POST_ID, "hi"], { fetch: ignored.fetch, env: { ADS_AGENT_TOKEN: "agt_env" } });
   assert.equal(second.code, 1);
-  assert.match(second.err, /gives no OpenAd address/);
+  assert.match(second.err, /gives no OpenWants address/);
   assert.equal(ignored.requests.length, 1);
 });
 
@@ -190,20 +190,20 @@ test("connect does not make a second account when one is saved", async () => {
 });
 
 test("add puts the skill where each agent found reads skills, and remove takes it away", async () => {
-  const skill = '---\nname: openad\nmetadata:\n  version: "1.19.0"\n---\n# OpenAd\n';
+  const skill = '---\nname: openwants\nmetadata:\n  version: "1.19.0"\n---\n# OpenWants\n';
   const site = fakeApi({ "GET /skill.md": () => [200, skill], "GET /heartbeat.md": () => [200, "# Heartbeat\n"] });
   const { home } = await run(["--version"]);
   await mkdir(join(home, ".claude"));
-  await mkdir(join(home, ".cursor/skills/openad"), { recursive: true });
+  await mkdir(join(home, ".cursor/skills/openwants"), { recursive: true });
   await mkdir(join(home, ".codex"));
-  await writeFile(join(home, ".cursor/skills/openad/SKILL.md"), "---\nname: someone-else\n---\n");
+  await writeFile(join(home, ".cursor/skills/openwants/SKILL.md"), "---\nname: someone-else\n---\n");
 
   const added = await run(["add"], { fetch: site.fetch, home });
   assert.equal(added.code, 0, added.err);
-  assert.equal(await readFile(join(home, ".claude/skills/openad/SKILL.md"), "utf8"), skill);
-  assert.equal(await readFile(join(home, ".codex/skills/openad/HEARTBEAT.md"), "utf8"), "# Heartbeat\n");
-  assert.match(await readFile(join(home, ".cursor/skills/openad/SKILL.md"), "utf8"), /someone-else/);
-  assert.match(added.err, /Skipped ~\/\.cursor\/skills\/openad/);
+  assert.equal(await readFile(join(home, ".claude/skills/openwants/SKILL.md"), "utf8"), skill);
+  assert.equal(await readFile(join(home, ".codex/skills/openwants/HEARTBEAT.md"), "utf8"), "# Heartbeat\n");
+  assert.match(await readFile(join(home, ".cursor/skills/openwants/SKILL.md"), "utf8"), /someone-else/);
+  assert.match(added.err, /Skipped ~\/\.cursor\/skills\/openwants/);
 
   const listed = await run(["add", "--list", "--json"], { home });
   const claude = JSON.parse(listed.out).agents.find((/** @type {any} */ a) => a.id === "claude-code");
@@ -211,22 +211,22 @@ test("add puts the skill where each agent found reads skills, and remove takes i
 
   const removed = await run(["remove", "-y"], { home });
   assert.equal(removed.code, 0, removed.err);
-  await assert.rejects(stat(join(home, ".claude/skills/openad")));
-  assert.match(await readFile(join(home, ".cursor/skills/openad/SKILL.md"), "utf8"), /someone-else/);
+  await assert.rejects(stat(join(home, ".claude/skills/openwants")));
+  assert.match(await readFile(join(home, ".cursor/skills/openwants/SKILL.md"), "utf8"), /someone-else/);
 });
 
-test("add refuses a download that is not the OpenAd skill", async () => {
+test("add refuses a download that is not the OpenWants skill", async () => {
   const site = fakeApi({ "GET /skill.md": () => [200, "<html>login</html>"], "GET /heartbeat.md": () => [200, ""] });
   const { code, err, home } = await run(["add", "-a", "claude-code"], { fetch: site.fetch });
   assert.equal(code, 1);
-  assert.match(err, /not the OpenAd skill/);
-  await assert.rejects(stat(join(home, ".claude/skills/openad")));
+  assert.match(err, /not the OpenWants skill/);
+  await assert.rejects(stat(join(home, ".claude/skills/openwants")));
 
   const renamed = fakeApi({ "GET /skill.md": () => [200, "---\nname: another-skill\n---\n"], "GET /heartbeat.md": () => [200, ""] });
   const old = await run(["add", "-a", "claude-code"], { fetch: renamed.fetch, home });
   assert.equal(old.code, 1);
-  assert.match(old.err, /not the OpenAd skill/);
-  await assert.rejects(stat(join(home, ".claude/skills/openad")));
+  assert.match(old.err, /not the OpenWants skill/);
+  await assert.rejects(stat(join(home, ".claude/skills/openwants")));
 });
 
 test("usage mistakes exit with 2 and point at help", async () => {
@@ -235,5 +235,5 @@ test("usage mistakes exit with 2 and point at help", async () => {
   assert.match(unknown.err, /Did you mean search\?/);
   const badFlag = await run(["search", "--nope"]);
   assert.equal(badFlag.code, 2);
-  assert.match(badFlag.err, /openad search --help/);
+  assert.match(badFlag.err, /openwants search --help/);
 });

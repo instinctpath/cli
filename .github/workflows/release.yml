@@ -1,8 +1,8 @@
 name: Release
 
-# Publishes to npm when a version tag is pushed, such as v0.3.0. The tag must
+# Publishes to npm when a version tag is pushed, such as v0.4.0. The tag must
 # match the version in package.json. Publishing uses npm trusted publishing,
-# so there is no token to keep: the openad package on npmjs.com lists
+# so there is no token to keep: the @openwants/cli package on npmjs.com lists
 # this repository and this workflow as its trusted publisher. A version that
 # is already on npm, such as one published by hand, is left alone.
 
@@ -32,7 +32,7 @@ jobs:
       - name: Check whether npm has this version
         id: npm
         run: |
-          if npm view "@openad/cli@${GITHUB_REF_NAME#v}" version > /dev/null 2>&1; then
+          if npm view "@openwants/cli@${GITHUB_REF_NAME#v}" version > /dev/null 2>&1; then
             echo "published=true" >> "${GITHUB_OUTPUT}"
           fi
       - name: Publish to npm
